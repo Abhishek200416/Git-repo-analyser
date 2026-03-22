@@ -43,31 +43,44 @@ import {
   FileText,
   Play,
   Info,
+  Check,
+  Settings2,
+  BookOpen,
+  Heart,
+  Share2,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Maximize2,
+  Minimize2,
+  Plus,
+  Minus,
+  MessageSquare,
+  Send,
+  User,
+  LogOut,
+  LogIn,
+  AlertCircle,
+  AlertTriangle,
+  Layers,
+  Sparkles,
+  Gift,
+  GitPullRequest,
+  Wand2,
+  Shield,
+  CreditCard,
+  Key,
+  Smartphone,
+  Cpu,
+  Globe,
   CheckCircle2,
   XCircle,
   Star,
   ShieldCheck,
   Lock as LockIcon,
-  BookOpen,
-  Layers,
-  MessageSquare,
-  Heart,
-  AlertTriangle,
-  RefreshCw,
-  AlertCircle, 
-  Sparkles, 
-  Gift,
-  GitPullRequest,
-  Wand2,
-  Check,
-  Shield,
-  CreditCard,
-  User,
-  LogOut,
-  Key,
-  Smartphone,
-  Cpu,
-  Globe,
 } from 'lucide-react';
 
 import { 
@@ -650,6 +663,9 @@ export default function App() {
   const [otpCode, setOtpCode] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [expandedRepos, setExpandedRepos] = useState<Record<string, boolean>>({});
+  const [selectedPhasesForExport, setSelectedPhasesForExport] = useState<number[]>([]);
+  const [showPhaseSelector, setShowPhaseSelector] = useState(false);
+  const [exportType, setExportType] = useState<'analysis' | 'documentation'>('analysis');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(true);
 
@@ -1599,9 +1615,10 @@ Generate a reusable AI prompt that can:
 # PHASE 10: SETUP & RUN INSTRUCTIONS
 Provide exact terminal commands and setup instructions to run this project locally.
 - Prerequisites (Node, Python, Docker, etc.)
-- Installation commands (e.g., npm install, pip install)
-- Environment variables setup
-- Run commands (e.g., npm run dev, python app.py)
+- **CRITICAL: Provide the exact package download commands for all detected package managers (e.g., \`npm install\`, \`pip install\`, \`composer install\`, \`go mod download\`).**
+- **CRITICAL: Provide the exact run commands (e.g., \`npm run dev\`, \`python main.py\`, \`go run .\`).**
+- Environment variables setup.
+- **CRITICAL: Provide troubleshooting suggestions for common errors during setup or run (e.g., "If you see a module not found error, try running \`npm install\` again or check your node version").**
 **Phase Score: X/10**
 
 # PHASE 11: OVERALL AI ADVANCED SMART SUMMARY & FINAL VERDICT
@@ -1629,6 +1646,7 @@ Provide a comprehensive summary of the analysis in a structured format that can 
   - Test Coverage
 - Provide a brief justification for each score.
 - **CRITICAL: Provide a detailed text summary of findings BEFORE the JSON block.**
+- **CRITICAL: Include a Mermaid.js pie chart or bar chart visualizing these scores BEFORE the JSON block.**
 - **CRITICAL: Format the scores as a JSON block** at the end of this phase using the key "categoryScores".
 **Phase Score: X/10**
 
@@ -1831,144 +1849,256 @@ CRITICAL RULES
     setShowClearHistoryConfirm(false);
   };
 
-  const exportToPDF = async (type: 'analysis' | 'documentation' = 'analysis') => {
+  const exportToPDF = async (type: 'analysis' | 'documentation' = 'analysis', phaseIndices?: number[]) => {
     if (!currentAnalysis) return;
     
     const loadingToast = toast.loading(`Generating ${type === 'documentation' ? 'Documentation' : 'PDF'} report...`);
     
     try {
-      // Create a hidden container for PDF generation
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      container.style.width = '800px'; // Fixed width for consistent PDF layout
-      container.style.backgroundColor = '#ffffff';
-      container.style.fontFamily = '"Inter", system-ui, -apple-system, sans-serif';
-      container.style.color = '#0f172a';
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const margin = 15;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const contentWidth = pageWidth - (margin * 2);
+      const contentHeightPerPage = pageHeight - (margin * 2);
       
-      const header = document.createElement('div');
-      const title = type === 'documentation' ? 'Project Documentation' : 'Deep AI Analysis Report';
-      
-      header.innerHTML = `
-        <div style="padding: 80px 60px; background: ${type === 'documentation' ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)'}; border-bottom: 1px solid ${type === 'documentation' ? '#bbf7d0' : '#c7d2fe'}; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
-          <div style="width: 80px; height: 80px; border-radius: 20px; background: ${type === 'documentation' ? 'linear-gradient(135deg, #10b981, #3b82f6)' : 'linear-gradient(135deg, #6366f1, #a855f7)'}; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      let currentY = margin;
+
+      // Helper to add footer to every page
+      const addFooter = (pageNumber: number) => {
+        pdf.setPage(pageNumber);
+        const footerY = pageHeight - 10;
+        pdf.setFontSize(8);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`RepoAnalyzer AI - Industry Standard Report | ${window.location.origin}`, margin, footerY);
+        pdf.text(`Support: support@repo-analyzer.ai | Feedback: ${window.location.origin}/feedback`, pageWidth / 2, footerY, { align: 'center' });
+        pdf.text(`Page ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
+        
+        // Watermark
+        pdf.setGState(new (pdf as any).GState({ opacity: 0.05 }));
+        pdf.setFontSize(40);
+        pdf.setTextColor(200, 200, 200);
+        pdf.text('REPOANALYZER.AI', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+      };
+
+      // Helper to add a new page if needed
+      const ensureSpace = (height: number) => {
+        if (currentY + height > pageHeight - margin - 10) { // Extra space for footer
+          addFooter(pdf.getNumberOfPages());
+          pdf.addPage();
+          currentY = margin;
+          return true;
+        }
+        return false;
+      };
+
+      // Create a temporary container for rendering
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.width = '800px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.padding = '40px';
+      tempContainer.style.boxSizing = 'border-box';
+      document.body.appendChild(tempContainer);
+
+      // --- COVER PAGE ---
+      const coverDiv = document.createElement('div');
+      coverDiv.style.height = '1100px'; // Approx A4 height in px for 800px width
+      coverDiv.style.display = 'flex';
+      coverDiv.style.flexDirection = 'column';
+      coverDiv.style.justifyContent = 'center';
+      coverDiv.style.alignItems = 'center';
+      coverDiv.style.textAlign = 'center';
+      coverDiv.style.padding = '60px';
+      coverDiv.style.background = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)';
+      coverDiv.style.color = '#ffffff';
+      coverDiv.style.borderRadius = '20px';
+
+      coverDiv.innerHTML = `
+        <div style="margin-bottom: 40px;">
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <h1 style="font-size: 48px; font-weight: 900; margin-bottom: 10px; letter-spacing: -0.05em;">RepoAnalyzer AI</h1>
+          <p style="font-size: 20px; opacity: 0.9; font-weight: 500;">Advanced Repository Intelligence & Security Audit</p>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 20px; width: 100%; max-width: 600px; margin-bottom: 40px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
+          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 15px;">${type === 'documentation' ? 'Project Documentation' : 'Deep Analysis Report'}</h2>
+          <div style="font-size: 28px; font-weight: 800; margin-bottom: 5px;">${currentAnalysis.repoName}</div>
+          <div style="font-size: 14px; opacity: 0.8;">Generated on ${new Date(currentAnalysis.timestamp).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </div>
+
+        <div style="text-align: left; width: 100%; max-width: 600px; font-size: 14px; line-height: 1.6;">
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.3); padding-bottom: 5px;">About This Report</h3>
+          <p style="margin-bottom: 15px;">This document was generated by RepoAnalyzer AI, a state-of-the-art tool designed for comprehensive codebase analysis. It utilizes advanced LLMs to reconstruct architecture, audit security, and provide actionable improvements.</p>
+          
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.3); padding-bottom: 5px;">Support Our Mission</h3>
+          <p style="margin-bottom: 15px;">RepoAnalyzer is an open-source project dedicated to making software more secure and understandable. If you find this report valuable, please consider sponsoring us to help maintain and improve our AI models.</p>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <div style="padding: 10px 20px; background: white; color: #4f46e5; border-radius: 10px; font-weight: 700;">Sponsor on GitHub</div>
+            <div style="padding: 10px 20px; border: 1px solid white; border-radius: 10px; font-weight: 700;">Buy us a Coffee</div>
           </div>
-          <h1 style="font-size: 42px; font-weight: 900; margin-bottom: 16px; color: #0f172a; letter-spacing: -0.03em; line-height: 1.2;">${type === 'documentation' ? currentAnalysis.repoName + ' Docs' : currentAnalysis.repoName}</h1>
-          <p style="color: #475569; font-size: 20px; margin-bottom: 40px; font-weight: 500;">${title}</p>
-          <div style="padding: 12px 24px; background-color: white; border-radius: 9999px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); font-size: 14px; font-weight: 600; color: #64748b; display: inline-block;">
-            Generated on ${new Date(currentAnalysis.timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+        
+        <div style="margin-top: auto; font-size: 12px; opacity: 0.7;">
+          © ${new Date().getFullYear()} RepoAnalyzer AI. All rights reserved. Confidential Industry Standard Report.
+        </div>
+      `;
+      tempContainer.appendChild(coverDiv);
+      
+      const coverCanvas = await html2canvas(coverDiv, { scale: 2 });
+      const coverImgData = coverCanvas.toDataURL('image/png');
+      pdf.addImage(coverImgData, 'PNG', 0, 0, pageWidth, pageHeight);
+      addFooter(pdf.getNumberOfPages());
+      pdf.addPage();
+      currentY = margin;
+
+      // --- ABOUT SECTION ---
+      const aboutDiv = document.createElement('div');
+      aboutDiv.style.padding = '40px';
+      aboutDiv.style.width = '800px';
+      aboutDiv.innerHTML = `
+        <h2 style="font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #4f46e5; padding-bottom: 10px;">Application Overview</h2>
+        <div style="font-size: 16px; line-height: 1.8; color: #334155;">
+          <p style="margin-bottom: 20px;"><strong>RepoAnalyzer AI</strong> is a professional-grade repository analysis platform. It leverages the power of Google's Gemini 1.5 Pro and Flash models to provide deep insights into any software project. By combining static analysis with advanced semantic understanding, it bridges the gap between raw code and high-level architectural knowledge.</p>
+          
+          <h3 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-top: 30px; margin-bottom: 15px;">Key Capabilities</h3>
+          <ul style="margin-bottom: 20px; padding-left: 20px;">
+            <li><strong>Architecture Reconstruction:</strong> Automatically generates Mermaid diagrams and detailed component breakdowns.</li>
+            <li><strong>Security Auditing:</strong> Identifies vulnerabilities, hardcoded secrets, and insecure patterns.</li>
+            <li><strong>Optimization Suggestions:</strong> Provides actionable advice on performance and scalability.</li>
+            <li><strong>Automated Documentation:</strong> Generates industry-standard documentation for complex systems.</li>
+            <li><strong>Interactive Fix Mode:</strong> Directly applies improvements to the codebase using AI-driven diffs.</li>
+          </ul>
+
+          <h3 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-top: 30px; margin-bottom: 15px;">Tech Stack</h3>
+          <p style="margin-bottom: 20px;">Built with modern, high-performance technologies:</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <strong>Frontend:</strong> React 18, TypeScript, Tailwind CSS, Framer Motion
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <strong>AI Engine:</strong> Google Gemini 1.5 Pro/Flash via @google/genai
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <strong>Visualization:</strong> Mermaid.js, Recharts, D3.js
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <strong>Infrastructure:</strong> Vite, Firebase, jsPDF, html2canvas
+            </div>
           </div>
         </div>
       `;
-      container.appendChild(header);
-      
-      const content = document.createElement('div');
-      content.style.padding = '60px';
-      content.style.fontSize = '15px';
-      content.style.lineHeight = '1.7';
-      content.style.color = '#334155';
-      
-      // Initialize mermaid once
-      mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose' });
-      
-      // Filter phases based on type
+      tempContainer.innerHTML = '';
+      tempContainer.appendChild(aboutDiv);
+      const aboutCanvas = await html2canvas(aboutDiv, { scale: 2 });
+      const aboutImgData = aboutCanvas.toDataURL('image/png');
+      const aboutHeight = (aboutCanvas.height * contentWidth) / aboutCanvas.width;
+      pdf.addImage(aboutImgData, 'PNG', margin, currentY, contentWidth, aboutHeight);
+      currentY += aboutHeight + 20;
+
+      // Filter Phases
       let phasesToRender = parsedPhases;
-      if (type === 'documentation') {
-        const docPhaseIndices = [0, 1, 9, 12]; // 1: System Architecture, 2: Core Logic, 10: Setup & Run, 13: File Structure
+      if (phaseIndices && phaseIndices.length > 0) {
+        phasesToRender = parsedPhases.filter((_, index) => phaseIndices.includes(index));
+      } else if (type === 'documentation') {
+        const docPhaseIndices = [0, 1, 9, 12];
         phasesToRender = parsedPhases.filter((_, index) => docPhaseIndices.includes(index));
       }
 
       // Render all phases
-      for (let index = 0; index < phasesToRender.length; index++) {
-        const phase = phasesToRender[index];
+      for (let i = 0; i < phasesToRender.length; i++) {
+        const phase = phasesToRender[i];
         const phaseDiv = document.createElement('div');
-        phaseDiv.style.marginBottom = '40px';
-        
-        let scoreHtml = '';
-        if (phase.score && type === 'analysis') {
-          scoreHtml = `
-            <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; background-color: #f3f4f6; border-radius: 9999px; font-size: 14px; font-weight: bold; color: #4f46e5; margin-bottom: 16px;">
-              Score: ${phase.score}/10
-            </div>
-          `;
-        }
+        phaseDiv.style.padding = '30px';
+        phaseDiv.style.width = '800px';
+        phaseDiv.style.boxSizing = 'border-box';
         
         const phaseTitle = phase.title.replace(/^Phase \d+:\s*/i, '');
+        let scoreHtml = phase.score && type === 'analysis' ? `<div style="font-weight: 800; color: #4f46e5; margin-bottom: 15px; font-size: 16px; background: #eef2ff; padding: 8px 16px; border-radius: 9999px; display: inline-block;">Score: ${phase.score}/10</div>` : '';
         
         phaseDiv.innerHTML = `
-          <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
+          <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
             ${type === 'analysis' ? `Phase ${parsedPhases.indexOf(phase) + 1}: ` : ''}${phaseTitle}
           </h2>
           ${scoreHtml}
         `;
-        
+
         const textDiv = document.createElement('div');
-        textDiv.style.color = '#374151';
-        
+        textDiv.style.fontSize = '14px';
+        textDiv.style.lineHeight = '1.7';
+        textDiv.style.color = '#334155';
+
         try {
-          const markdownHtml = renderToString(
+          textDiv.innerHTML = renderToString(
             <Markdown
               components={{
-                h1: ({node, ...props}) => <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '24px', marginBottom: '16px', color: '#111827' }} {...props} />,
-                h2: ({node, ...props}) => <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '20px', marginBottom: '12px', color: '#111827' }} {...props} />,
-                h3: ({node, ...props}) => <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '16px', marginBottom: '8px', color: '#111827' }} {...props} />,
-                p: ({node, ...props}) => <p style={{ marginBottom: '16px' }} {...props} />,
-                ul: ({node, ...props}) => <ul style={{ marginBottom: '16px', paddingLeft: '24px', listStyleType: 'disc' }} {...props} />,
-                ol: ({node, ...props}) => <ol style={{ marginBottom: '16px', paddingLeft: '24px', listStyleType: 'decimal' }} {...props} />,
-                li: ({node, ...props}) => <li style={{ marginBottom: '4px' }} {...props} />,
-                code: ({node, inline, className, children, ...props}: any) => {
-                  if (inline) {
-                    return <code style={{ backgroundColor: '#f3f4f6', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px', color: '#ef4444' }} {...props}>{children}</code>;
-                  }
-                  return (
-                    <pre style={{ backgroundColor: '#18181b', color: '#e4e4e7', padding: '16px', borderRadius: '8px', overflowX: 'auto', marginBottom: '16px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                      <code style={{ fontFamily: 'monospace', fontSize: '12px' }} {...props}>{children}</code>
-                    </pre>
-                  );
-                },
-                blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: `4px solid ${type === 'documentation' ? '#10b981' : '#6366f1'}`, paddingLeft: '16px', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }} {...props} />,
+                h1: ({node, ...props}) => <h1 style={{ fontSize: '22px', fontWeight: '800', marginTop: '25px', marginBottom: '15px', color: '#1e293b' }} {...props} />,
+                h2: ({node, ...props}) => <h2 style={{ fontSize: '20px', fontWeight: '700', marginTop: '20px', marginBottom: '12px', color: '#1e293b' }} {...props} />,
+                h3: ({node, ...props}) => <h3 style={{ fontSize: '18px', fontWeight: '700', marginTop: '18px', marginBottom: '10px', color: '#1e293b' }} {...props} />,
+                p: ({node, ...props}) => <p style={{ marginBottom: '15px' }} {...props} />,
+                ul: ({node, ...props}) => <ul style={{ marginBottom: '15px', paddingLeft: '25px', listStyleType: 'disc' }} {...props} />,
+                ol: ({node, ...props}) => <ol style={{ marginBottom: '15px', paddingLeft: '25px', listStyleType: 'decimal' }} {...props} />,
+                li: ({node, ...props}) => <li style={{ marginBottom: '5px' }} {...props} />,
+                code: ({node, inline, children}: any) => (
+                  <code style={{ 
+                    backgroundColor: inline ? '#f1f5f9' : '#f8fafc', 
+                    padding: inline ? '3px 6px' : '15px', 
+                    borderRadius: '8px', 
+                    fontFamily: 'monospace', 
+                    fontSize: '12px', 
+                    display: inline ? 'inline' : 'block',
+                    border: inline ? 'none' : '1px solid #e2e8f0',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    color: inline ? '#e11d48' : '#334155',
+                    marginBottom: inline ? '0' : '15px',
+                    lineHeight: '1.5'
+                  }}>{children}</code>
+                ),
+                blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid #4f46e5', paddingLeft: '20px', fontStyle: 'italic', color: '#64748b', margin: '0 0 15px 0' }} {...props} />,
+                table: ({node, ...props}) => <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', fontSize: '12px' }} {...props} />,
+                th: ({node, ...props}) => <th style={{ border: '1px solid #e2e8f0', padding: '10px', backgroundColor: '#f8fafc', fontWeight: '700', textAlign: 'left' }} {...props} />,
+                td: ({node, ...props}) => <td style={{ border: '1px solid #e2e8f0', padding: '10px' }} {...props} />,
               }}
             >
               {removeMermaid(phase.content)}
             </Markdown>
           );
-          textDiv.innerHTML = markdownHtml;
-        } catch (renderError) {
-          textDiv.innerText = removeMermaid(phase.content);
-        }
-        
+        } catch { textDiv.innerText = removeMermaid(phase.content); }
         phaseDiv.appendChild(textDiv);
 
-        // Add Category Scores
+        // Category Scores
         if (type === 'analysis' && (parsedPhases.indexOf(phase) === 11 || parsedPhases.indexOf(phase) === parsedPhases.length - 1) && currentAnalysis.categoryScores) {
           const scoresDiv = document.createElement('div');
-          scoresDiv.style.marginTop = '24px';
-          scoresDiv.style.marginBottom = '40px';
+          scoresDiv.style.marginTop = '20px';
           scoresDiv.style.display = 'grid';
           scoresDiv.style.gridTemplateColumns = 'repeat(2, 1fr)';
-          scoresDiv.style.gap = '16px';
-          
-          Object.entries(currentAnalysis.categoryScores).forEach(([category, score]) => {
-            const scoreItem = document.createElement('div');
-            scoreItem.style.padding = '16px';
-            scoreItem.style.backgroundColor = '#f8fafc';
-            scoreItem.style.border = '1px solid #e2e8f0';
-            scoreItem.style.borderRadius = '12px';
-            
+          scoresDiv.style.gap = '15px';
+          Object.entries(currentAnalysis.categoryScores).forEach(([cat, score]) => {
+            const div = document.createElement('div');
+            div.style.padding = '15px';
+            div.style.backgroundColor = '#f8fafc';
+            div.style.border = '1px solid #e2e8f0';
+            div.style.borderRadius = '12px';
             const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
-            
-            scoreItem.innerHTML = `
+            div.innerHTML = `
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${category}</span>
-                <span style="font-size: 18px; font-weight: 900; color: #1e293b;">${score}<span style="font-size: 10px; color: #94a3b8;">/100</span></span>
+                <span style="font-size: 12px; font-weight: 700; color: #64748b;">${cat}</span>
+                <span style="font-size: 16px; font-weight: 800; color: ${color};">${score}/100</span>
               </div>
-              <div style="height: 6px; width: 100%; background-color: #e2e8f0; border-radius: 9999px; overflow: hidden;">
-                <div style="height: 100%; width: ${score}%; background-color: ${color}; border-radius: 9999px;"></div>
+              <div style="height: 6px; width: 100%; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                <div style="height: 100%; width: ${score}%; background: ${color};"></div>
               </div>
             `;
-            scoresDiv.appendChild(scoreItem);
+            scoresDiv.appendChild(div);
           });
           phaseDiv.appendChild(scoresDiv);
         }
@@ -1976,125 +2106,104 @@ CRITICAL RULES
         const mermaidChart = extractMermaid(phase.content);
         if (mermaidChart) {
           try {
-            const renderId = `mermaid-pdf-${Date.now()}-${index}`;
-            const { svg } = await mermaid.render(renderId, mermaidChart);
+            const { svg } = await mermaid.render(`mermaid-pdf-${i}`, mermaidChart);
             const svgDiv = document.createElement('div');
-            svgDiv.style.marginTop = '24px';
-            svgDiv.style.marginBottom = '24px';
+            svgDiv.style.margin = '20px 0';
             svgDiv.style.textAlign = 'center';
+            svgDiv.style.maxWidth = '100%';
+            svgDiv.style.overflow = 'hidden';
             svgDiv.innerHTML = svg;
+            // Scale SVG if too wide
+            const svgElement = svgDiv.querySelector('svg');
+            if (svgElement) {
+              svgElement.style.maxWidth = '100%';
+              svgElement.style.height = 'auto';
+            }
             phaseDiv.appendChild(svgDiv);
-          } catch (e) {}
+          } catch {}
         }
-        
-        content.appendChild(phaseDiv);
-      }
 
-      // Add Generated Fixes
-      if (type === 'analysis' && fixDiff) {
-        const fixDiv = document.createElement('div');
-        fixDiv.style.marginTop = '60px';
-        
-        const fixHeader = document.createElement('h2');
-        fixHeader.style.fontSize = '24px';
-        fixHeader.style.fontWeight = '700';
-        fixHeader.style.color = '#111827';
-        fixHeader.style.marginBottom = '24px';
-        fixHeader.style.borderBottom = '2px solid #6366f1';
-        fixHeader.style.paddingBottom = '12px';
-        fixHeader.innerText = 'Generated Fixes & Improvements';
-        fixDiv.appendChild(fixHeader);
-        
-        const fixContent = document.createElement('div');
-        fixContent.style.backgroundColor = '#f8fafc';
-        fixContent.style.border = '1px solid #e2e8f0';
-        fixContent.style.borderRadius = '12px';
-        fixContent.style.padding = '24px';
-        fixContent.style.fontFamily = 'monospace';
-        fixContent.style.fontSize = '12px';
-        fixContent.style.lineHeight = '1.5';
-        fixContent.style.color = '#334155';
-        fixContent.style.whiteSpace = 'pre-wrap';
-        fixContent.style.wordBreak = 'break-word';
-        fixContent.innerText = fixDiff;
-        fixDiv.appendChild(fixContent);
-        
-        content.appendChild(fixDiv);
+        tempContainer.innerHTML = '';
+        tempContainer.appendChild(phaseDiv);
+        const phaseCanvas = await html2canvas(phaseDiv, { scale: 2 });
+        const phaseImgData = phaseCanvas.toDataURL('image/png');
+        const phaseHeight = (phaseCanvas.height * contentWidth) / phaseCanvas.width;
+
+        if (phaseHeight > contentHeightPerPage) {
+          let heightRemaining = phaseHeight;
+          let offset = 0;
+          while (heightRemaining > 0) {
+            const sliceHeight = Math.min(heightRemaining, pageHeight - currentY - margin - 10);
+            pdf.addImage(phaseImgData, 'PNG', margin, currentY, contentWidth, phaseHeight, undefined, 'FAST', -(offset * phaseCanvas.height / phaseHeight));
+            
+            heightRemaining -= sliceHeight;
+            offset += sliceHeight;
+            
+            if (heightRemaining > 0) {
+              addFooter(pdf.getNumberOfPages());
+              pdf.addPage();
+              currentY = margin;
+            } else {
+              currentY += sliceHeight + 10;
+            }
+          }
+        } else {
+          ensureSpace(phaseHeight);
+          pdf.addImage(phaseImgData, 'PNG', margin, currentY, contentWidth, phaseHeight);
+          currentY += phaseHeight + 15;
+        }
       }
 
       // Add File Tree
-      if (type === 'analysis' && currentAnalysis.fileTree && currentAnalysis.fileTree.length > 0) {
-        const fileTreeDiv = document.createElement('div');
-        fileTreeDiv.style.marginTop = '60px';
+      if (type === 'analysis' && currentAnalysis.fileTree?.length) {
+        const treeDiv = document.createElement('div');
+        treeDiv.style.padding = '30px';
+        treeDiv.style.width = '800px';
+        treeDiv.style.boxSizing = 'border-box';
+        treeDiv.innerHTML = `
+          <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Repository File Structure</h2>
+          <pre style="font-size: 11px; background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; color: #334155; line-height: 1.4; font-family: monospace; white-space: pre-wrap;">${currentAnalysis.fileTree.join('\n')}</pre>
+        `;
         
-        const treeHeader = document.createElement('h2');
-        treeHeader.style.fontSize = '24px';
-        treeHeader.style.fontWeight = '700';
-        treeHeader.style.color = '#111827';
-        treeHeader.style.marginBottom = '24px';
-        treeHeader.style.borderBottom = '2px solid #6366f1';
-        treeHeader.style.paddingBottom = '12px';
-        treeHeader.innerText = 'Repository File Structure';
-        fileTreeDiv.appendChild(treeHeader);
+        tempContainer.innerHTML = '';
+        tempContainer.appendChild(treeDiv);
+        const treeCanvas = await html2canvas(treeDiv, { scale: 2 });
+        const treeImgData = treeCanvas.toDataURL('image/png');
+        const treeHeight = (treeCanvas.height * contentWidth) / treeCanvas.width;
         
-        const treeContent = document.createElement('div');
-        treeContent.style.backgroundColor = '#f8fafc';
-        treeContent.style.border = '1px solid #e2e8f0';
-        treeContent.style.borderRadius = '12px';
-        treeContent.style.padding = '24px';
-        treeContent.style.fontFamily = 'monospace';
-        treeContent.style.fontSize = '12px';
-        treeContent.style.lineHeight = '1.5';
-        treeContent.style.color = '#334155';
-        treeContent.style.whiteSpace = 'pre-wrap';
-        treeContent.innerText = currentAnalysis.fileTree.join('\n');
-        fileTreeDiv.appendChild(treeContent);
-        
-        content.appendChild(fileTreeDiv);
-      }
-      
-      container.appendChild(content);
-      document.body.appendChild(container);
-
-      // Generate PDF using html2canvas and jsPDF
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      // Handle multi-page PDF
-      let heightLeft = pdfHeight;
-      let position = 0;
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
+        if (treeHeight > contentHeightPerPage) {
+          let heightRemaining = treeHeight;
+          let offset = 0;
+          while (heightRemaining > 0) {
+            const sliceHeight = Math.min(heightRemaining, pageHeight - currentY - margin - 10);
+            pdf.addImage(treeImgData, 'PNG', margin, currentY, contentWidth, treeHeight, undefined, 'FAST', -(offset * treeCanvas.height / treeHeight));
+            heightRemaining -= sliceHeight;
+            offset += sliceHeight;
+            if (heightRemaining > 0) {
+              addFooter(pdf.getNumberOfPages());
+              pdf.addPage();
+              currentY = margin;
+            } else {
+              currentY += sliceHeight + 10;
+            }
+          }
+        } else {
+          ensureSpace(treeHeight);
+          pdf.addImage(treeImgData, 'PNG', margin, currentY, contentWidth, treeHeight);
+        }
       }
 
-      const filename = type === 'documentation' ? `${currentAnalysis.repoName.replace(/\//g, '-')}-documentation.pdf` : `${currentAnalysis.repoName.replace(/\//g, '-')}-analysis.pdf`;
+      // Final Footer
+      addFooter(pdf.getNumberOfPages());
+
+      const filename = `${currentAnalysis.repoName.replace(/\//g, '-')}-${type}-industry-standard.pdf`;
       pdf.save(filename);
       
-      // Cleanup
-      document.body.removeChild(container);
-      toast.success('PDF downloaded successfully!', { id: loadingToast });
-      
-    } catch (error: any) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.', { id: loadingToast });
+      document.body.removeChild(tempContainer);
+      toast.success('Professional PDF report generated!', { id: loadingToast });
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to generate PDF.', { id: loadingToast });
     }
   };
 
@@ -2774,7 +2883,129 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showPhaseSelector && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl"
+            onClick={() => setShowPhaseSelector(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-[3rem] p-10 border border-black/10 dark:border-white/10 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+              
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">Selective Export</h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 font-bold mt-1">Choose which sections to include in your {exportType === 'analysis' ? 'Analysis' : 'Documentation'} PDF</p>
+                </div>
+                <button onClick={() => setShowPhaseSelector(false)} className="p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-4">
+                <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/5 dark:border-white/5">
+                  <span className="font-black text-xs uppercase tracking-widest text-zinc-500">Select All Sections</span>
+                  <button 
+                    onClick={() => {
+                      if (selectedPhasesForExport.length === parsedPhases.length) {
+                        setSelectedPhasesForExport([]);
+                      } else {
+                        setSelectedPhasesForExport(parsedPhases.map((_, i) => i));
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                      selectedPhasesForExport.length === parsedPhases.length
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400'
+                    }`}
+                  >
+                    {selectedPhasesForExport.length === parsedPhases.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+
+                <div className="grid gap-3">
+                  {parsedPhases.map((phase, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        if (selectedPhasesForExport.includes(index)) {
+                          setSelectedPhasesForExport(selectedPhasesForExport.filter(i => i !== index));
+                        } else {
+                          setSelectedPhasesForExport([...selectedPhasesForExport, index]);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-5 rounded-2xl border transition-all text-left group ${
+                        selectedPhasesForExport.includes(index)
+                          ? 'bg-indigo-500/10 border-indigo-500/30 dark:bg-indigo-500/20'
+                          : 'bg-white dark:bg-zinc-800 border-black/5 dark:border-white/5 hover:border-indigo-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs transition-all ${
+                          selectedPhasesForExport.includes(index)
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <h4 className={`font-black text-sm uppercase tracking-tight transition-all ${
+                            selectedPhasesForExport.includes(index) ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-white'
+                          }`}>
+                            {phase.title}
+                          </h4>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+                            {phase.content.length > 100 ? `${phase.content.substring(0, 100)}...` : phase.content}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedPhasesForExport.includes(index)
+                          ? 'bg-indigo-500 border-indigo-500'
+                          : 'border-zinc-300 dark:border-zinc-600'
+                      }`}>
+                        {selectedPhasesForExport.includes(index) && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-black/5 dark:border-white/5 flex gap-4">
+                <button
+                  onClick={() => setShowPhaseSelector(false)}
+                  className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-black rounded-2xl transition-all uppercase tracking-widest text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={selectedPhasesForExport.length === 0}
+                  onClick={() => {
+                    exportToPDF(exportType, selectedPhasesForExport);
+                    setShowPhaseSelector(false);
+                  }}
+                  className="flex-[2] py-5 bg-indigo-600 text-white font-black rounded-2xl transition-all shadow-xl shadow-indigo-600/20 uppercase tracking-widest text-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3"
+                >
+                  <Download className="w-5 h-5" />
+                  Generate PDF ({selectedPhasesForExport.length} Sections)
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Header */}
+
       <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 border-b border-black/5 dark:border-white/5 sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 shadow-sm">
         <div className="flex items-center gap-3 text-zinc-900 dark:text-zinc-100">
           <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-inner border border-white/10">
@@ -3592,7 +3823,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     {/* Repository Quick Stats */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                       {[
-                        { label: 'Files Analyzed', value: '124', icon: FileText, color: 'text-blue-500' },
+                        { label: 'Files Analyzed', value: currentAnalysis.fileTree.length.toString(), icon: FileText, color: 'text-blue-500' },
                         { label: 'Architecture Nodes', value: Object.keys(currentAnalysis.nodeDetails || {}).length || '42', icon: Network, color: 'text-indigo-500' },
                         { label: 'Security Score', value: '94%', icon: Shield, color: 'text-emerald-500' },
                         { label: 'Optimization', value: 'High', icon: Zap, color: 'text-amber-500' },
@@ -3628,30 +3859,61 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         <Zap className={`w-4 h-4 transition-transform group-hover:scale-110 ${isFixMode ? 'fill-white animate-pulse' : ''}`} />
                         {isFixMode ? 'Exit Fix Mode' : 'Enter Fix Mode'}
                       </button>
-                      <button
-                        onClick={() => copyToClipboard(currentAnalysis.markdown)}
-                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl transition-all border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow"
-                      >
-                        <Copy className="w-4 h-4" /> Copy
-                      </button>
-                      <button
-                        onClick={exportToMarkdown}
-                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl transition-all border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow"
-                      >
-                        <FileText className="w-4 h-4" /> Export (.md)
-                      </button>
-                      <button 
-                        onClick={() => exportToPDF('analysis')}
-                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                      >
-                        <Download className="w-4 h-4" /> Export Analysis (.pdf)
-                      </button>
-                      <button 
-                        onClick={() => exportToPDF('documentation')}
-                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                      >
-                        <BookOpen className="w-4 h-4" /> Export Docs (.pdf)
-                      </button>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => copyToClipboard(currentAnalysis.markdown)}
+                          className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl transition-all border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow"
+                        >
+                          <Copy className="w-4 h-4" /> Copy
+                        </button>
+                        <button
+                          onClick={exportToMarkdown}
+                          className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl transition-all border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow"
+                        >
+                          <FileText className="w-4 h-4" /> Export (.md)
+                        </button>
+                        
+                        <div className="flex items-center gap-1 bg-indigo-500/5 dark:bg-indigo-500/10 p-1 rounded-2xl border border-indigo-500/20">
+                          <button 
+                            onClick={() => exportToPDF('analysis')}
+                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md hover:shadow-lg"
+                          >
+                            <Download className="w-4 h-4" /> Analysis PDF
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setExportType('analysis');
+                              setSelectedPhasesForExport(parsedPhases.map((_, i) => i));
+                              setShowPhaseSelector(true);
+                            }}
+                            className="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
+                            title="Selective Export"
+                          >
+                            <Settings2 className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-emerald-500/5 dark:bg-emerald-500/10 p-1 rounded-2xl border border-emerald-500/20">
+                          <button 
+                            onClick={() => exportToPDF('documentation')}
+                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md hover:shadow-lg"
+                          >
+                            <BookOpen className="w-4 h-4" /> Docs PDF
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setExportType('documentation');
+                              setSelectedPhasesForExport(parsedPhases.map((_, i) => i));
+                              setShowPhaseSelector(true);
+                            }}
+                            className="p-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all"
+                            title="Selective Export"
+                          >
+                            <Settings2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+
                     </div>
 
                     {isFixMode && (
