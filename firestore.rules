@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "abhishek20040916@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Data Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.email is string && data.email.size() > 0 &&
+             data.uid is string && data.uid.size() > 0;
+    }
+
+    function isValidSubscription(data) {
+      return data.email is string && data.email.size() > 0 &&
+             data.planId is string && data.planId.size() > 0 &&
+             data.status in ['active', 'cancelled', 'expired', 'pending'] &&
+             data.startDate is string && data.endDate is string;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+    
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role; // Prevent self-role escalation
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isAuthenticated() && (request.auth.token.email == resource.data.email || isAdmin());
+      allow create: if false; // Only server can create subscriptions via Razorpay webhook
+      allow update: if isAdmin(); // Only admin/server can update
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (request.auth.token.email == resource.data.email || isAdmin());
+      allow create: if false; // Only server can record payments
+      allow update: if false;
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Allow users to log events if needed
+      allow update: if false;
+    }
+  }
+}

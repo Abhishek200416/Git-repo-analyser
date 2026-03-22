@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and authentication mapping",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "uid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "credits": {
+          "type": "object",
+          "properties": {
+            "standard": { "type": "integer" },
+            "deep": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["email", "uid"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "User subscription details",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "uid": { "type": "string" },
+        "planId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "cancelled", "expired", "pending"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "razorpaySubscriptionId": { "type": "string" },
+        "razorpayCustomerId": { "type": "string" },
+        "basePrice": { "type": "number" },
+        "gstAmount": { "type": "number" },
+        "finalAmount": { "type": "number" },
+        "lastVerifiedAt": { "type": "string", "format": "date-time" },
+        "usedScans": {
+          "type": "object",
+          "properties": {
+            "quick": { "type": "integer" },
+            "standard": { "type": "integer" },
+            "deep": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["email", "planId", "status", "startDate", "endDate"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment transaction logs",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "uid": { "type": "string" },
+        "orderId": { "type": "string" },
+        "paymentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "orderId", "amount", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Billing and security events",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "event": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["event", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/subscriptions/{subscriptionId}": {
+      "schema": "Subscription",
+      "description": "Active and past subscriptions"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment history"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "System audit logs"
+    }
+  }
+}
