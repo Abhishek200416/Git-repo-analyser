@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Info, Zap, History, Heart, Shield } from 'lucide-react';
+import { X, Info, Zap, History, Heart, Shield, BookOpen, Cpu } from 'lucide-react';
 import { FEATURES } from '../constants';
 
 interface AboutModalProps {
@@ -39,17 +39,126 @@ export const AboutModal: React.FC<AboutModalProps> = ({ show, onClose }) => {
                 </div>
               </div>
               
-              <div className="space-y-10 mb-10">
+              <div className="space-y-12 mb-10">
                 <section>
-                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-500" aria-hidden="true" /> Our Mission
+                  <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <Zap className="w-6 h-6 text-amber-500" aria-hidden="true" /> The GitRepoAnalyzer Vision (2026)
                   </h3>
-                  <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
-                    GitRepoAnalyzer is an advanced AI-driven platform designed to provide developers with deep insights into their GitHub repositories. We believe that understanding code should be as fast as writing it. Our mission is to empower developers with architectural foresight and security intelligence.
-                  </p>
-                  <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed mt-4">
-                    In an era of rapid software development, the ability to quickly grasp the nuances of a new codebase is invaluable. GitRepoAnalyzer leverages the latest advancements in Large Language Models to bridge the gap between raw code and high-level understanding.
-                  </p>
+                  <div className="space-y-4 text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                    <p>
+                      In 2026, GitRepoAnalyzer has evolved from a static analysis tool into a proactive partner in the software development lifecycle. We recognized a fundamental problem in modern software engineering: as projects grow in complexity, the "cognitive load" required to understand them grows exponentially. Traditional tools provide raw data—linting errors, cyclomatic complexity, or test coverage—but they fail to provide *understanding*.
+                    </p>
+                    <p>
+                      Our platform is built on the belief that code is a narrative. Every repository tells a story of architectural decisions, technical debt, and innovative solutions. GitRepoAnalyzer uses advanced Large Language Models (LLMs), specifically Google's Gemini 3.1 Pro, to read this narrative. In 2026, our models have achieved a level of "Architectural Wisdom," allowing them to understand not just the syntax, but the long-term implications of design choices.
+                    </p>
+                    <p>
+                      By bridging the gap between low-level source code and high-level architectural foresight, we enable teams to move faster with higher confidence. Whether you're onboarding a new engineer, performing a security audit, or planning a major refactor, GitRepoAnalyzer provides the clarity you need to make informed decisions in the fast-paced world of 2026.
+                    </p>
+                    <p>
+                      Our long-term vision is to create a "Self-Healing Codebase." In 2026, we've taken the first steps toward this future with "Autonomous Remediation," where the AI proactively identifies weaknesses and proposes fixes before they impact production. GitRepoAnalyzer is the tireless, AI-powered senior engineer that lives within your 2026 CI/CD pipeline.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="p-8 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-[2.5rem] border border-indigo-500/20">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <Cpu className="w-6 h-6 text-indigo-500" aria-hidden="true" /> Why We Are Different in 2026
+                  </h3>
+                  <div className="grid gap-8">
+                    <div className="space-y-3">
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-sm tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Contextual Intelligence (2M Token Window)
+                      </h4>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        Unlike traditional linters that look at files in isolation, GitRepoAnalyzer analyzes your entire repository as a single cohesive unit. In 2026, we leverage the full 2M token context window of Gemini 3.1 Pro, allowing us to ingest entire codebases at once. This provides a "God's Eye View" of your architecture, identifying cross-file dependencies and global state patterns that fragmented tools simply cannot perceive.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-sm tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Predictive Security & Zero-Day Detection
+                      </h4>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        We don't just find known CVEs. Our AI identifies "logic bombs" and subtle security anti-patterns that might not be in any database yet. In 2026, our security engine is integrated with real-time threat intelligence, allowing it to predict how an attacker might exploit your specific business logic. Our model is trained on millions of real-world exploits, providing a level of protection that is unparalleled in the industry.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-sm tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Automated Remediation & Fix Patches
+                      </h4>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        Finding a problem is only half the battle. GitRepoAnalyzer generates production-ready patches that you can apply with a single click. In 2026, these patches are "context-aware," meaning they follow your project's specific coding style and naming conventions. This isn't just "find and replace"—it's intelligent refactoring that understands the downstream impact of every change.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-sm tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Multi-Agent Analysis Loop (2026)
+                      </h4>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        Our analysis is a collaborative effort between specialized AI agents. In 2026, these agents have become even more specialized, with dedicated roles for things like "Cloud Infrastructure Cost Optimization" and "Accessibility Compliance." These agents debate their findings in a "virtual war room" before synthesizing a final, high-confidence report for you.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <Shield className="w-6 h-6 text-emerald-500" aria-hidden="true" /> Security & Compliance (2026)
+                  </h3>
+                  <div className="space-y-4 text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                    <p>
+                      Security is woven into the very fabric of GitRepoAnalyzer. In 2026, we operate on a "Zero-Trust" architecture. When you provide a repository URL, our system creates a temporary, isolated sandbox to perform the analysis. No code is ever persisted on our servers beyond the duration of the analysis session. Once the report is generated, the sandbox is securely wiped, ensuring that your intellectual property remains entirely yours.
+                    </p>
+                    <p>
+                      We utilize Google's enterprise-grade Gemini infrastructure, ensuring that your data is handled with the highest level of encryption and compliance. In 2026, our security reviews cover the OWASP Top 10, SANS Top 25, and industry-specific compliance standards like SOC2, HIPAA, and GDPR. We also perform "Secret Scanning" to ensure that no API keys or sensitive credentials have been accidentally committed.
+                    </p>
+                    <p>
+                      For enterprise customers in 2026, we offer "Private Cloud" deployments where the analysis engine runs entirely within your own VPC, ensuring that your most sensitive intellectual property never leaves your controlled environment.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="p-8 bg-amber-500/5 dark:bg-amber-500/10 rounded-[2.5rem] border border-amber-500/20">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <BookOpen className="w-6 h-6 text-amber-500" aria-hidden="true" /> Hidden Features & Pro Tips
+                  </h3>
+                  <ul className="space-y-6">
+                    <li className="flex gap-4">
+                      <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-black text-zinc-900 dark:text-white uppercase text-sm mb-1">Deep Dependency Graphing</h5>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">Type <code className="bg-zinc-200 dark:bg-zinc-800 px-1 rounded">/graph</code> in the chat to generate a visual representation of your module dependencies. This helps you identify circular imports, tightly coupled components, and potential architectural bottlenecks that are invisible in the source code.</p>
+                      </div>
+                    </li>
+                    <li className="flex gap-4">
+                      <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-black text-zinc-900 dark:text-white uppercase text-sm mb-1">Performance Bottleneck Detection</h5>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">Our AI can identify O(n²) operations in your loops and suggest optimized algorithms automatically. It also detects memory leaks in JavaScript/TypeScript by analyzing closure patterns and event listener management, providing you with a more performant and stable application.</p>
+                      </div>
+                    </li>
+                    <li className="flex gap-4">
+                      <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-black text-zinc-900 dark:text-white uppercase text-sm mb-1">Technical Debt Estimation</h5>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">Get a "Debt Score" that estimates how many developer-hours are required to refactor problematic areas of your code. This allows project managers to prioritize refactoring tasks based on their actual impact on development velocity and long-term maintenance costs.</p>
+                      </div>
+                    </li>
+                    <li className="flex gap-4">
+                      <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-black text-zinc-900 dark:text-white uppercase text-sm mb-1">Semantic Code Search</h5>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">Use the chat to ask questions like "Where do we handle user authentication?" or "How is the payment flow implemented?". Our AI performs a semantic search, finding the relevant code even if you don't use the exact keywords, saving you hours of manual exploration.</p>
+                      </div>
+                    </li>
+                  </ul>
                 </section>
 
                 <section>
@@ -58,15 +167,15 @@ export const AboutModal: React.FC<AboutModalProps> = ({ show, onClose }) => {
                     {FEATURES.map((feature) => {
                       const Icon = feature.icon;
                       return (
-                        <div key={feature.id} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-black/5 dark:border-white/5 group hover:border-indigo-500/30 transition-all shadow-sm">
-                          <div className="w-10 h-10 shrink-0 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform border border-black/5 dark:border-white/5 mx-auto sm:mx-0">
-                            <Icon className="w-5 h-5 text-indigo-500" aria-label={`Icon for ${feature.title}`} />
+                        <div key={feature.id} className="flex flex-col sm:flex-row gap-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-black/5 dark:border-white/5 group hover:border-indigo-500/30 transition-all shadow-sm">
+                          <div className="w-12 h-12 shrink-0 rounded-xl bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform border border-black/5 dark:border-white/5 mx-auto sm:mx-0">
+                            <Icon className="w-6 h-6 text-indigo-500" aria-label={`Icon for ${feature.title}`} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                              <h4 className="font-black text-zinc-900 dark:text-white uppercase text-[10px] tracking-tight truncate">{feature.title}</h4>
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h4 className="font-black text-zinc-900 dark:text-white uppercase text-xs tracking-tight truncate">{feature.title}</h4>
                             </div>
-                            <p className="text-zinc-500 dark:text-zinc-400 text-[9px] leading-snug font-medium break-words">{feature.description}</p>
+                            <p className="text-zinc-500 dark:text-zinc-400 text-[11px] leading-relaxed font-medium break-words">{feature.description}</p>
                           </div>
                         </div>
                       );
@@ -74,13 +183,57 @@ export const AboutModal: React.FC<AboutModalProps> = ({ show, onClose }) => {
                   </div>
                 </section>
 
-                <section>
-                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
-                    <History className="w-5 h-5 text-indigo-500" aria-hidden="true" /> Evolution of Analysis
+                <section className="p-8 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] border border-black/5 dark:border-white/5">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <History className="w-6 h-6 text-indigo-500" aria-hidden="true" /> Detailed Roadmap (2026)
                   </h3>
-                  <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
-                    We don't just analyze code; we track its evolution. Our platform allows you to compare different versions of your repository, helping you visualize how your architecture and security posture change over time. This historical perspective is crucial for maintaining long-term code health.
-                  </p>
+                  <div className="space-y-6">
+                    <div className="relative pl-8 border-l-2 border-indigo-500/30 space-y-2">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-indigo-500 border-4 border-white dark:border-zinc-900"></div>
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-xs tracking-widest">Q2 2026: Advanced Refactoring & Cross-Language Porting</h4>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">We are launching our "Cross-Language Porting" feature, which allows you to port logic between languages (e.g., Python to Rust) with full semantic parity. This includes migrating from Class components to Functional components in React, and automatically generating TypeScript types from existing JavaScript code.</p>
+                    </div>
+                    <div className="relative pl-8 border-l-2 border-indigo-500/30 space-y-2">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-900"></div>
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-xs tracking-widest">Q3 2026: Real-Time Collaborative Architecture Design</h4>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">We are introducing "Architectural Whiteboards," where multiple developers can interact with the AI to design and simulate system changes in real-time. This will be a game-changer for remote teams, allowing you to see the AI's impact analysis as you sketch out new features.</p>
+                    </div>
+                    <div className="relative pl-8 border-l-2 border-indigo-500/30 space-y-2">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-900"></div>
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-xs tracking-widest">Q4 2026: AI-Powered Documentation & Knowledge Graph</h4>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">Our AI will automatically generate and maintain a "Project Knowledge Graph," linking code, documentation, and historical decisions. It will track changes in your code and update the documentation in real-time, ensuring that your team always has the latest information.</p>
+                    </div>
+                    <div className="relative pl-8 border-l-2 border-indigo-500/30 space-y-2">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-900"></div>
+                      <h4 className="font-black text-zinc-900 dark:text-white uppercase text-xs tracking-widest">2027: The Autonomous Ecosystem</h4>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">Our ultimate goal is to create an ecosystem that manages itself. This includes automated dependency updates, proactive security patching, and self-optimizing performance tuning. We want to free developers from the "drudgery" of maintenance, allowing them to focus entirely on innovation.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="p-8 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] border border-black/5 dark:border-white/5">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <History className="w-6 h-6 text-indigo-500" aria-hidden="true" /> Technical Architecture (2026)
+                  </h3>
+                  <div className="space-y-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400 font-medium">
+                    <p>GitRepoAnalyzer is built on a modern, high-performance stack designed for the 2026 landscape. Our frontend is a React-based Single Page Application (SPA) powered by Vite, utilizing Tailwind CSS for a responsive, utility-first design system. We use Framer Motion for smooth, hardware-accelerated animations and Lucide React for consistent, crisp iconography.</p>
+                    <p>The backend is an Express.js server running on Node.js, which handles API requests and orchestration of the AI analysis pipeline. In 2026, we use the Firebase Admin SDK for secure server-side operations and Firestore for real-time data synchronization. Our AI engine is powered by Google's Gemini 3.1 Pro, accessed via the @google/genai SDK, which provides state-of-the-art reasoning and code understanding capabilities.</p>
+                    <p>For security, we implement a "Zero-Trust" model. All repository analysis is performed in isolated, ephemeral sandboxes. In 2026, we use Firebase Authentication for secure user management and Firestore Security Rules to ensure that data is only accessible to authorized users. Our CI/CD pipeline is fully automated, ensuring that every commit is analyzed for quality and security before being deployed.</p>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-3">
+                    <History className="w-6 h-6 text-indigo-500" aria-hidden="true" /> Evolution of Analysis
+                  </h3>
+                  <div className="space-y-4 text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                    <p>
+                      We don't just analyze code; we track its evolution. Our platform allows you to compare different versions of your repository, helping you visualize how your architecture and security posture change over time. This historical perspective is crucial for maintaining long-term code health.
+                    </p>
+                    <p>
+                      By integrating with your GitHub Webhooks, GitRepoAnalyzer can perform "Continuous Analysis," providing feedback on every single commit. This ensures that technical debt is addressed as it's created, rather than piling up over months or years.
+                    </p>
+                  </div>
                 </section>
 
                 <section className="bg-indigo-500/5 dark:bg-indigo-500/10 p-8 rounded-[2rem] border border-indigo-500/20 text-center relative overflow-hidden group">

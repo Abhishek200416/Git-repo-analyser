@@ -112,6 +112,7 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { CookieModal } from './components/CookieModal';
 import { PRModal } from './components/PRModal';
 import { ClearHistoryModal } from './components/ClearHistoryModal';
+import { Comments } from './components/Comments';
 import { FEATURES, DOC_PHASE_INDICES } from './constants';
 import { generatePDF } from './utils/pdfExport';
 import { generateMarkdown, downloadMarkdown } from './utils/markdownExport';
@@ -301,6 +302,27 @@ export default function App() {
   const [findings, setFindings] = useState<string[]>([]);
   const [showFixPrompt, setShowFixPrompt] = useState(false);
   const [fixedFiles, setFixedFiles] = useState<Record<string, string>>({});
+  const [isCommentsInView, setIsCommentsInView] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsCommentsInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    const commentsSection = document.getElementById('comments-section');
+    if (commentsSection) {
+      observer.observe(commentsSection);
+    }
+
+    return () => {
+      if (commentsSection) {
+        observer.unobserve(commentsSection);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2861,6 +2883,8 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           </div>
         </div>
 
+        <Comments />
+
         {/* Footer */}
         <footer className="bg-zinc-950 py-12 border-t border-white/10 relative z-10">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-12">
@@ -2875,6 +2899,10 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <ul className="space-y-2 text-sm text-zinc-400">
                 <li><button onClick={() => setShowAboutModal(true)} className="hover:text-white transition-colors">About Features</button></li>
                 <li><button onClick={() => setShowBlog(true)} className="hover:text-white transition-colors">Blog & Articles</button></li>
+                <li><button onClick={() => {
+                  const el = document.getElementById('comments-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }} className="hover:text-white transition-colors">Community Feedback</button></li>
                 <li><button onClick={() => setShowPrivacyModal(true)} className="hover:text-white transition-colors">Privacy Policy</button></li>
                 <li><button onClick={() => setShowCookieModal(true)} className="hover:text-white transition-colors">Cookie Policy</button></li>
                 <li><button onClick={() => setShowTermsModal(true)} className="hover:text-white transition-colors">Terms of Service</button></li>
@@ -2948,6 +2976,31 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         show={showAdBlockModal} 
         onClose={() => setShowAdBlockModal(false)} 
       />
+
+      {/* Floating Message Icon */}
+      <AnimatePresence>
+        {!isCommentsInView && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 50 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              const el = document.getElementById('comments-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="fixed bottom-24 right-6 z-[90] p-4 bg-indigo-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/40 border border-indigo-500/50 hover:bg-indigo-700 transition-colors group"
+            title="View Comments"
+          >
+            <MessageSquare className="w-6 h-6" />
+            <span className="absolute right-full mr-4 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10">
+              Community Feedback
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Cookie Consent Banner */}
       <CookieConsent 
         show={!hasAcceptedCookies} 
