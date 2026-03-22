@@ -82,6 +82,7 @@ import {
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { CookieConsent } from './components/CookieConsent';
 import { AdBlockerModal } from './components/AdBlockerModal';
+import { Blog } from './components/Blog';
 import { FixModePrompt } from './components/FixModePrompt';
 import { FixPromptModal } from './components/FixPromptModal';
 import { fetchWithTimeout, GitHubRateLimitError, parseGitHubUrl } from './services/github';
@@ -241,7 +242,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-type FeatureId = 'details' | 'architecture' | 'security' | 'recommendations' | 'masterPrompt' | 'diagram' | 'refactoring';
+type FeatureId = 'details' | 'architecture' | 'security' | 'recommendations' | 'masterPrompt' | 'diagram' | 'refactoring' | 'codeFixes' | 'documentation';
 type AnalysisDepth = 'quick' | 'standard' | 'deep';
 
 const FEATURES: { id: FeatureId, title: string, description: string, detailedDescription: string, icon: any }[] = [
@@ -294,6 +295,20 @@ const FEATURES: { id: FeatureId, title: string, description: string, detailedDes
     detailedDescription: 'Automatically generate interactive, high-quality Mermaid.js diagrams. Visualize component relationships, system logic flows, and data hierarchies in a clear, professional visual format.',
     icon: Network, 
   },
+  { 
+    id: 'codeFixes', 
+    title: 'Automated Code Fixes', 
+    description: 'AI-driven code refactoring and bug fixes.', 
+    detailedDescription: 'Automatically generate precise code fixes and refactoring suggestions. Apply AI-driven improvements directly to your codebase to resolve bugs, enhance performance, and ensure best practices.',
+    icon: Terminal, 
+  },
+  { 
+    id: 'documentation', 
+    title: 'Project Documentation', 
+    description: 'Generate comprehensive project documentation.', 
+    detailedDescription: 'Instantly generate detailed, professional project documentation, including README files, API references, and architectural overviews, ready to be exported as Markdown or PDF.',
+    icon: FileText, 
+  },
 ];
 
 interface AnalysisResult {
@@ -336,6 +351,7 @@ const PopupAd = ({
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
         <button 
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-4 right-4 p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full text-zinc-500 dark:text-zinc-400 transition-all"
         >
           <X className="w-5 h-5" />
@@ -360,7 +376,9 @@ const PopupAd = ({
                 <div className="text-sm font-bold text-zinc-900 dark:text-white">Premium AI Developer Tools</div>
               </div>
             </div>
-            <button className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-transform">
+            <button 
+              onClick={() => window.open('https://github.com/sponsors/abhishek20040916', '_blank')}
+              className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-transform">
               Claim Your Discount
             </button>
           </div>
@@ -391,6 +409,7 @@ const AdBanner = ({
   depth?: AnalysisDepth
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
+  const [adBlockDetected, setAdBlockDetected] = useState(false);
   const adRef = useRef<HTMLModElement>(null);
   const clientId = 'ca-pub-4365607109967193';
   const actualSlotId = slotId || 'f08c47fec0942fa0f';
@@ -427,8 +446,15 @@ const AdBanner = ({
 
     pushAd();
 
+    const checkAd = setTimeout(() => {
+      if (adRef.current && adRef.current.offsetHeight === 0) {
+        setAdBlockDetected(true);
+      }
+    }, 1500);
+
     return () => {
       clearTimeout(timeoutId);
+      clearTimeout(checkAd);
     };
   }, []);
 
@@ -476,14 +502,21 @@ const AdBanner = ({
           </button>
           
           <div className="w-full h-full relative z-10 flex items-center justify-center overflow-hidden">
-            <ins 
-                 ref={adRef}
-                 className="adsbygoogle"
-                 style={{ display: 'block', width: '100%', height: '100%' }}
-                 data-ad-client={clientId}
-                 data-ad-slot={actualSlotId}
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
+            {adBlockDetected ? (
+              <a href="https://github.com/sponsors/abhishek20040916" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center w-full h-full text-zinc-500 hover:text-indigo-500 transition-colors group">
+                <Gift className="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold uppercase tracking-widest">{text || "Sponsor this project"}</span>
+              </a>
+            ) : (
+              <ins 
+                   ref={adRef}
+                   className="adsbygoogle"
+                   style={{ display: 'block', width: '100%', height: '100%' }}
+                   data-ad-client={clientId}
+                   data-ad-slot={actualSlotId}
+                   data-ad-format="auto"
+                   data-full-width-responsive="true"></ins>
+            )}
           </div>
         </motion.div>
       )}
@@ -515,6 +548,13 @@ const renderDiffView = (oldText: string, newText: string) => {
 
 export default function App() {
   const [url, setUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const repoParam = params.get('repo');
+      if (repoParam) {
+        return `https://github.com/${repoParam}`;
+      }
+    }
     return localStorage.getItem('repoAnalyzerUrl') || '';
   });
   const [loading, setLoading] = useState(() => {
@@ -647,6 +687,7 @@ export default function App() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
+  const [showBlog, setShowBlog] = useState(false);
   const [hasAcceptedCookies, setHasAcceptedCookies] = useState(() => {
     return localStorage.getItem('repoAnalyzerCookiesAccepted') === 'true';
   });
@@ -931,6 +972,39 @@ ${currentAnalysis.markdown.substring(0, 5000)}
       document.body.classList.remove('dark');
     }
   }, [theme]);
+
+  // Update document title and meta tags for SEO dynamically
+  useEffect(() => {
+    if (currentAnalysis) {
+      const title = `${currentAnalysis.repoName} Analysis & Code Review | RepoAnalyzer`;
+      const desc = `AI-powered architectural analysis, security review, and automated code fixes for ${currentAnalysis.repoName}.`;
+      document.title = title;
+      document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
+      document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+      document.querySelector('meta[property="og:description"]')?.setAttribute('content', desc);
+      document.querySelector('meta[property="twitter:title"]')?.setAttribute('content', title);
+      document.querySelector('meta[property="twitter:description"]')?.setAttribute('content', desc);
+      
+      // Update URL parameter for shareability
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('repo', currentAnalysis.repoName);
+      window.history.replaceState({}, '', newUrl);
+    } else {
+      const title = 'RepoAnalyzer | AI-Powered GitHub Repository Analysis & Code Fixes';
+      const desc = 'Instantly analyze GitHub repositories with AI. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation.';
+      document.title = title;
+      document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
+      document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+      document.querySelector('meta[property="og:description"]')?.setAttribute('content', desc);
+      document.querySelector('meta[property="twitter:title"]')?.setAttribute('content', title);
+      document.querySelector('meta[property="twitter:description"]')?.setAttribute('content', desc);
+      
+      // Remove URL parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('repo');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [currentAnalysis]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -2072,6 +2146,20 @@ CRITICAL RULES
       <Toaster position="top-center" />
       <div className="min-h-screen w-full max-w-[100vw] bg-zinc-50 dark:bg-zinc-950 flex flex-col lg:flex-row font-sans text-zinc-700 dark:text-zinc-300 selection:bg-indigo-500/30 transition-colors duration-300 overflow-x-hidden">
       
+      <AnimatePresence>
+        {showBlog && (
+          <motion.div
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[100] bg-zinc-50 dark:bg-zinc-950 overflow-y-auto"
+          >
+            <Blog onClose={() => setShowBlog(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Ad Blocker Detection Modal */}
       <AnimatePresence>
         {adBlockDetected && (
@@ -2114,11 +2202,11 @@ CRITICAL RULES
                 </div>
 
                 <button
-                  onClick={() => setShowDonationModal(true)}
+                  onClick={() => window.open('https://github.com/sponsors/abhishek20040916', '_blank')}
                   className="w-full py-5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-black rounded-[2rem] transition-all flex items-center justify-center gap-3 border border-black/5 dark:border-white/5"
                 >
                   <Heart className="w-6 h-6 text-rose-500 fill-rose-500/20" />
-                  DONATE TO REMOVE ADS
+                  SPONSOR TO REMOVE ADS
                 </button>
 
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.4em] font-black pt-4 opacity-60">
@@ -2152,8 +2240,9 @@ CRITICAL RULES
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">PR Title</label>
+                  <label htmlFor="pr-title" className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">PR Title</label>
                   <input 
+                    id="pr-title"
                     type="text"
                     value={prConfig.title}
                     onChange={(e) => setPrConfig({...prConfig, title: e.target.value})}
@@ -2162,8 +2251,9 @@ CRITICAL RULES
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">Target Branch</label>
+                  <label htmlFor="pr-branch" className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">Target Branch</label>
                   <input 
+                    id="pr-branch"
                     type="text"
                     value={prConfig.branch}
                     onChange={(e) => setPrConfig({...prConfig, branch: e.target.value})}
@@ -2172,8 +2262,9 @@ CRITICAL RULES
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">PR Description</label>
+                  <label htmlFor="pr-description" className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 ml-1">PR Description</label>
                   <textarea 
+                    id="pr-description"
                     value={prConfig.body}
                     onChange={(e) => setPrConfig({...prConfig, body: e.target.value})}
                     placeholder="Describe the changes..."
@@ -2228,6 +2319,7 @@ CRITICAL RULES
                 </div>
                 <button 
                   onClick={() => setShowPRCommands(false)}
+                  aria-label="Close"
                   className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-500 dark:text-zinc-400 transition-all"
                 >
                   <X className="w-5 h-5" />
@@ -2310,6 +2402,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 z-20"></div>
             <button 
               onClick={() => setShowAboutModal(false)}
+              aria-label="Close"
               className="absolute top-6 right-6 p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-500 dark:text-zinc-400 transition-all z-30"
             >
               <X className="w-5 h-5" />
@@ -2329,7 +2422,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="space-y-10 mb-10">
                 <section>
                   <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-500" /> Our Mission
+                    <Zap className="w-5 h-5 text-amber-500" aria-hidden="true" /> Our Mission
                   </h3>
                   <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
                     RepoAnalyzer is an advanced AI-driven platform designed to provide developers with deep insights into their GitHub repositories. We believe that understanding code should be as fast as writing it. Our mission is to empower developers with architectural foresight and security intelligence.
@@ -2347,7 +2440,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                       return (
                         <div key={feature.id} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-black/5 dark:border-white/5 group hover:border-indigo-500/30 transition-all shadow-sm">
                           <div className="w-10 h-10 shrink-0 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform border border-black/5 dark:border-white/5 mx-auto sm:mx-0">
-                            <Icon className="w-5 h-5 text-indigo-500" />
+                            <Icon className="w-5 h-5 text-indigo-500" aria-label={`Icon for ${feature.title}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
@@ -2363,7 +2456,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
                 <section>
                   <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
-                    <History className="w-5 h-5 text-indigo-500" /> Evolution of Analysis
+                    <History className="w-5 h-5 text-indigo-500" aria-hidden="true" /> Evolution of Analysis
                   </h3>
                   <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
                     We don't just analyze code; we track its evolution. Our platform allows you to compare different versions of your repository, helping you visualize how your architecture and security posture change over time. This historical perspective is crucial for maintaining long-term code health.
@@ -2382,7 +2475,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 <section className="p-8 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] border border-black/5 dark:border-white/5">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-indigo-500" />
+                      <Shield className="w-5 h-5 text-indigo-500" aria-hidden="true" />
                     </div>
                     <h4 className="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-widest">Privacy & Security First</h4>
                   </div>
@@ -2436,19 +2529,19 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-black/5 dark:border-white/5 text-center">
-                    <Cpu className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
+                    <Cpu className="w-5 h-5 text-indigo-500 mx-auto mb-1" aria-hidden="true" />
                     <p className="text-[10px] font-black uppercase text-zinc-500">AI Compute</p>
                   </div>
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-black/5 dark:border-white/5 text-center">
-                    <Zap className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
+                    <Zap className="w-5 h-5 text-yellow-500 mx-auto mb-1" aria-hidden="true" />
                     <p className="text-[10px] font-black uppercase text-zinc-500">Fast Analysis</p>
                   </div>
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-black/5 dark:border-white/5 text-center">
-                    <ShieldCheck className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+                    <ShieldCheck className="w-5 h-5 text-emerald-500 mx-auto mb-1" aria-hidden="true" />
                     <p className="text-[10px] font-black uppercase text-zinc-500">Security Audits</p>
                   </div>
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-black/5 dark:border-white/5 text-center">
-                    <Globe className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+                    <Globe className="w-5 h-5 text-blue-500 mx-auto mb-1" aria-hidden="true" />
                     <p className="text-[10px] font-black uppercase text-zinc-500">Global Access</p>
                   </div>
                 </div>
@@ -2457,11 +2550,13 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </p>
               </div>
               <a
-                href={`mailto:abhishek20040916@gmail.com?subject=Donation/Support for Repo Analyzer&body=Hi, I would like to support the Repo Analyzer project or have a donation related enquiry. Please provide more information.`}
+                href="https://github.com/sponsors/abhishek20040916"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full py-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-2xl transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] shadow-2xl uppercase tracking-widest text-sm"
               >
-                <Mail className="w-6 h-6" />
-                Contact via Email
+                <Heart className="w-6 h-6" />
+                Sponsor via GitHub
               </a>
               <button
                 onClick={() => setShowDonationModal(false)}
@@ -2543,7 +2638,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="absolute top-0 left-0 w-full h-2 bg-zinc-500"></div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">Terms of Service</h2>
-                <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
+                <button onClick={() => setShowTermsModal(false)} aria-label="Close" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -2594,7 +2689,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">Privacy Policy</h2>
-                <button onClick={() => setShowPrivacyModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
+                <button onClick={() => setShowPrivacyModal(false)} aria-label="Close" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -2645,7 +2740,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="absolute top-0 left-0 w-full h-2 bg-amber-500"></div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">Cookie Policy</h2>
-                <button onClick={() => setShowCookieModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
+                <button onClick={() => setShowCookieModal(false)} aria-label="Close" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -2689,6 +2784,12 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         </div>
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => setShowBlog(true)}
+            className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          >
+            <BookOpen className="w-4 h-4" /> Blog
+          </button>
+          <button 
             onClick={toggleTheme}
             className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 border border-indigo-100 dark:border-indigo-500/20 transition-all flex items-center justify-center shadow-sm hover:shadow"
             title="Toggle Theme"
@@ -2697,6 +2798,9 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           </button>
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+            aria-expanded={isSidebarOpen}
+            aria-controls="sidebar"
             className="p-2.5 bg-zinc-100 dark:bg-zinc-900 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-black/5 dark:border-white/5 transition-all shadow-sm hover:shadow"
           >
             {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -2710,11 +2814,11 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
       )}
 
       {/* Sidebar - History */}
-      <aside className={`fixed top-0 left-0 h-[100dvh] w-[85vw] sm:w-80 lg:w-96 bg-white/95 dark:bg-zinc-950/95 lg:bg-white/80 lg:dark:bg-zinc-950/80 border-r border-black/5 dark:border-white/5 flex flex-col z-50 lg:z-20 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} backdrop-blur-md shadow-[8px_0_40px_rgba(0,0,0,0.08)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.4)] overflow-hidden`}>
+      <aside id="sidebar" className={`fixed top-0 left-0 h-[100dvh] w-[85vw] sm:w-80 lg:w-96 bg-white/95 dark:bg-zinc-950/95 lg:bg-white/80 lg:dark:bg-zinc-950/80 border-r border-black/5 dark:border-white/5 flex flex-col z-50 lg:z-20 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} backdrop-blur-md shadow-[8px_0_40px_rgba(0,0,0,0.08)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.4)] overflow-hidden`}>
         <div className="p-5 lg:p-8 border-b border-black/5 dark:border-white/5 bg-zinc-50/80 dark:bg-zinc-900/80 flex flex-col gap-4 lg:gap-5 relative overflow-hidden group/header shrink-0">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover/header:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.03] dark:opacity-[0.05] mix-blend-luminosity pointer-events-none"></div>
+          <div role="img" aria-label="Abstract technology background representing code analysis and AI" className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.03] dark:opacity-[0.05] mix-blend-luminosity pointer-events-none"></div>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4 lg:mb-5">
               <div className="flex items-center gap-3 lg:gap-3.5 text-zinc-900 dark:text-zinc-100">
@@ -2722,7 +2826,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/logo:animate-[shimmer_1.5s_infinite]"></div>
                   <Github className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
                 </div>
-                <h1 className="text-xl lg:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">RepoAnalyzer</h1>
+                <span className="text-xl lg:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">RepoAnalyzer</span>
               </div>
               <div className="flex items-center gap-4">
                 {isGlowing && (
@@ -2737,6 +2841,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </button>
                 <button 
                   onClick={() => setIsSidebarOpen(false)}
+                  aria-label="Close Sidebar"
                   className="lg:hidden p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -2754,6 +2859,15 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   <span>Features</span>
                 </button>
 
+                <button 
+                  onClick={() => setShowBlog(true)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl text-zinc-700 dark:text-zinc-300 font-bold border border-black/5 dark:border-white/5 transition-all flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md group relative overflow-hidden text-[10px] text-center"
+                  title="Read our latest articles"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <BookOpen className="w-4 h-4 text-indigo-500" /> 
+                  <span>Blog</span>
+                </button>
                 <button 
                   onClick={() => setShowFeedbackModal(true)}
                   className="w-full px-3 py-2.5 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl text-zinc-700 dark:text-zinc-300 font-bold border border-black/5 dark:border-white/5 transition-all flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md group relative overflow-hidden text-[10px] text-center"
@@ -2927,13 +3041,13 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-3xl lg:rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="relative z-10">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-2 lg:mb-3 text-zinc-900 dark:text-white flex items-center gap-3 lg:gap-4 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-2 lg:mb-3 text-zinc-900 dark:text-white flex items-center gap-3 lg:gap-4 tracking-tight">
                 <div className="p-2 lg:p-3 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl lg:rounded-2xl border border-indigo-500/20 dark:border-indigo-500/30 shadow-inner">
                   <Activity className="w-6 h-6 lg:w-7 lg:h-7 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                Analyze a Repository
-              </h2>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-6 lg:mb-10 text-sm sm:text-base lg:text-lg font-medium max-w-2xl">Enter a GitHub repository URL to generate a comprehensive AI-powered analysis, architecture diagram, and security review.</p>
+                Analyze GitHub Repository with AI
+              </h1>
+              <p className="text-zinc-500 dark:text-zinc-400 mb-6 lg:mb-10 text-sm sm:text-base lg:text-lg font-medium max-w-2xl">Enter a GitHub repository URL to generate a comprehensive AI-powered analysis, architecture diagram, security review, and automated code fixes. Optimize your code and generate project documentation instantly.</p>
               
               <AdBanner depth={analysisDepth} height="h-20" className="mb-6 lg:mb-10 rounded-2xl lg:rounded-3xl border border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/50" text="Search Header Ad" />
               <AdBanner depth={analysisDepth} height="h-12" className="mb-4 rounded-xl border border-black/5 dark:border-white/5 bg-blue-500/5" text="Cloud Hosting Deals" />
@@ -2946,6 +3060,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     <Search className="absolute left-4 lg:left-6 w-5 h-5 lg:w-6 lg:h-6 text-zinc-400 group-focus-within/input:text-indigo-500 transition-colors" />
                     <input
                       type="url"
+                      aria-label="GitHub Repository URL"
                       value={url}
                       onChange={(e) => {
                         setUrl(e.target.value);
@@ -2959,6 +3074,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     />
                     <button
                       type="button"
+                      aria-label="Paste from clipboard"
                       onClick={async () => {
                         try {
                           const text = await navigator.clipboard.readText();
@@ -3005,6 +3121,8 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
               {error && (
                 <motion.div 
+                  role="alert"
+                  aria-live="assertive"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-6 p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-2xl text-sm flex items-start gap-3 border border-red-200 dark:border-red-500/20 shadow-sm"
@@ -3108,7 +3226,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         <div className="relative z-10 flex items-start justify-between mb-2 gap-2">
                           <div className="flex items-center gap-2.5 font-extrabold text-sm lg:text-base text-zinc-900 dark:text-zinc-100 tracking-tight min-w-0 flex-1">
                             <div className="shrink-0 p-2 rounded-lg transition-all duration-300 shadow-sm bg-indigo-500 text-white shadow-indigo-500/30">
-                              <f.icon className="w-4 h-4 lg:w-5 lg:h-5" />
+                              <f.icon className="w-4 h-4 lg:w-5 lg:h-5" aria-label={`Icon for ${f.title}`} />
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
                               <span className="flex flex-wrap items-center gap-1.5">
@@ -3156,6 +3274,8 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             ) : loading ? (
               <motion.div 
                 key="loading"
+                aria-live="polite"
+                aria-busy="true"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -3356,6 +3476,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           ) : currentAnalysis ? (
             <motion.div 
               key="results"
+              aria-live="polite"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -3678,7 +3799,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
                         <Github className="w-12 h-12 lg:w-14 lg:h-14 text-zinc-400 dark:text-zinc-500 group-hover/empty:text-indigo-500 transition-colors duration-500 relative z-10" />
                       </div>
-                      <h3 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-white mb-5 tracking-tight group-hover/empty:text-transparent group-hover/empty:bg-clip-text group-hover/empty:bg-gradient-to-r group-hover/empty:from-indigo-600 group-hover/empty:to-purple-600 dark:group-hover/empty:from-indigo-400 dark:group-hover/empty:to-purple-400 transition-all duration-500">Ready to Analyze</h3>
+                      <h2 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-white mb-5 tracking-tight group-hover/empty:text-transparent group-hover/empty:bg-clip-text group-hover/empty:bg-gradient-to-r group-hover/empty:from-indigo-600 group-hover/empty:to-purple-600 dark:group-hover/empty:from-indigo-400 dark:group-hover/empty:to-purple-400 transition-all duration-500">Ready to Analyze</h2>
                       <p className="max-w-lg mx-auto leading-relaxed text-base lg:text-lg text-zinc-500 dark:text-zinc-400 font-medium">Paste a GitHub repository link above to get a detailed breakdown of its architecture, security, and a creative master prompt.</p>
                     </div>
                   </motion.div>
@@ -3690,13 +3811,13 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         {/* About Section */}
         <div className="mt-auto relative overflow-hidden">
           <div className="absolute inset-0 bg-zinc-900 dark:bg-zinc-950"></div>
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-luminosity"></div>
+          <div role="img" aria-label="Abstract technology background representing code analysis and AI" className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-luminosity"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-transparent"></div>
           
           <div className="max-w-6xl mx-auto px-6 py-20 lg:px-12 relative z-10">
             <div className="text-center mb-16">
-              <h3 className="text-3xl lg:text-4xl font-black text-white mb-4 tracking-tight">Intelligence at Scale</h3>
-              <p className="text-zinc-400 text-lg max-w-2xl mx-auto">Empowering developers with deep architectural understanding and security foresight through advanced AI analysis.</p>
+              <h2 className="text-3xl lg:text-4xl font-black text-white mb-4 tracking-tight">AI-Powered Code Intelligence at Scale</h2>
+              <p className="text-zinc-400 text-lg max-w-2xl mx-auto">Empowering developers with deep architectural understanding, automated code fixes, and security foresight through advanced AI repository analysis.</p>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -3704,28 +3825,68 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 border border-indigo-500/30 group-hover:scale-110 transition-transform duration-300">
                   <Activity className="w-7 h-7 text-indigo-400" />
                 </div>
-                <h4 className="text-xl font-bold text-white mb-4">Deep Analysis</h4>
+                <h3 className="text-xl font-bold text-white mb-4">Deep Repository Analysis</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  We use advanced AI models to read through repository metadata and documentation to understand the core architecture and purpose.
+                  We use advanced AI models to read through repository metadata, code structure, and documentation to understand the core architecture and purpose of your GitHub projects.
                 </p>
               </div>
               <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
                 <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-500/30 group-hover:scale-110 transition-transform duration-300">
                   <ShieldAlert className="w-7 h-7 text-rose-400" />
                 </div>
-                <h4 className="text-xl font-bold text-white mb-4">Security First</h4>
+                <h3 className="text-xl font-bold text-white mb-4">Automated Security Review</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  Get instant feedback on potential vulnerabilities, outdated dependencies, and security misconfigurations before you deploy.
+                  Get instant feedback on potential vulnerabilities, outdated dependencies, and security misconfigurations before you deploy with our AI code reviewer.
                 </p>
               </div>
               <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
                 <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/30 group-hover:scale-110 transition-transform duration-300">
                   <Zap className="w-7 h-7 text-emerald-400" />
                 </div>
-                <h4 className="text-xl font-bold text-white mb-4">Actionable Insights</h4>
+                <h3 className="text-xl font-bold text-white mb-4">Actionable Code Fixes</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  Receive concrete recommendations for refactoring, performance optimization, and a master prompt to recreate the stack.
+                  Receive concrete recommendations for refactoring, performance optimization, automated bug fixes, and generate comprehensive project documentation instantly.
                 </p>
+              </div>
+            </div>
+
+            <div className="mt-24 text-center border-t border-white/10 pt-16">
+              <h2 className="text-2xl font-bold text-white mb-8">Supported Technologies & Frameworks</h2>
+              <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+                {['JavaScript', 'TypeScript', 'Python', 'React', 'Node.js', 'Next.js', 'Vue', 'Angular', 'Go', 'Rust', 'Java', 'C++', 'Ruby on Rails', 'PHP', 'Docker', 'Kubernetes'].map((tech) => (
+                  <span key={tech} className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium hover:bg-white/10 hover:text-white transition-colors cursor-default">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+              <p className="text-zinc-500 mt-8 text-sm max-w-2xl mx-auto">
+                Our AI code reviewer seamlessly integrates with any GitHub repository to provide deep architectural analysis, security vulnerability scanning, and automated refactoring across all major programming languages and modern web frameworks.
+              </p>
+            </div>
+
+            <div className="mt-24 text-left border-t border-white/10 pt-16 max-w-4xl mx-auto">
+              <h2 className="text-3xl font-black text-white mb-12 text-center tracking-tight">Frequently Asked Questions</h2>
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-100 mb-3">How does the AI repository analysis work?</h3>
+                  <p className="text-zinc-400 leading-relaxed">RepoAnalyzer uses advanced large language models to scan your GitHub repository's codebase. It analyzes the file structure, dependencies, and code logic to generate a comprehensive overview of the architecture, identify potential security vulnerabilities, and suggest actionable code improvements.</p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-100 mb-3">Is my code secure when using RepoAnalyzer?</h3>
+                  <p className="text-zinc-400 leading-relaxed">Yes, your code's security is our priority. We only access public repositories or repositories you explicitly provide access to. The code is processed securely in memory for analysis and is not stored permanently or used to train our models without your consent.</p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-100 mb-3">Can it automatically fix the code issues it finds?</h3>
+                  <p className="text-zinc-400 leading-relaxed">Absolutely. Our "Automated Code Fixes" feature not only identifies bugs and anti-patterns but also generates the exact code needed to resolve them. You can easily copy these fixes or generate a git patch to apply them directly to your repository.</p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-100 mb-3">What languages and frameworks are supported?</h3>
+                  <p className="text-zinc-400 leading-relaxed">RepoAnalyzer supports a wide array of modern programming languages and frameworks, including JavaScript, TypeScript, Python, React, Node.js, Go, Rust, and many more. The AI is trained on diverse codebases, allowing it to understand and analyze almost any tech stack.</p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-100 mb-3">Can I export the analysis results?</h3>
+                  <p className="text-zinc-400 leading-relaxed">Yes, you can export the full analysis, including the architecture diagram and security review, as a beautifully formatted PDF or Markdown file. This is perfect for sharing with your team or including in your project documentation.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -3735,22 +3896,23 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         <footer className="bg-zinc-950 py-12 border-t border-white/10 relative z-10">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-12">
             <div className="col-span-1 lg:col-span-2">
-              <h2 className="text-xl font-black text-white mb-4">RepoAnalyzer</h2>
+              <div className="text-xl font-black text-white mb-4">RepoAnalyzer</div>
               <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
-                Advanced AI-powered repository analysis. Gain deep insights into your codebase, identify security vulnerabilities, and optimize your workflow.
+                Advanced AI-powered repository analysis. Gain deep insights into your codebase, identify security vulnerabilities, and optimize your workflow with automated code fixes.
               </p>
             </div>
             <div>
-              <h3 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Resources</h3>
+              <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Resources</h2>
               <ul className="space-y-2 text-sm text-zinc-400">
                 <li><button onClick={() => setShowAboutModal(true)} className="hover:text-white transition-colors">About Features</button></li>
+                <li><button onClick={() => setShowBlog(true)} className="hover:text-white transition-colors">Blog & Articles</button></li>
                 <li><button onClick={() => setShowPrivacyModal(true)} className="hover:text-white transition-colors">Privacy Policy</button></li>
                 <li><button onClick={() => setShowCookieModal(true)} className="hover:text-white transition-colors">Cookie Policy</button></li>
                 <li><button onClick={() => setShowTermsModal(true)} className="hover:text-white transition-colors">Terms of Service</button></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Support</h3>
+              <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Support</h2>
               <ul className="space-y-2 text-sm text-zinc-400">
                 <li><button onClick={() => setShowFeedbackModal(true)} className="hover:text-white transition-colors">Contact</button></li>
                 <li><button onClick={() => setShowDonationModal(true)} className="hover:text-white transition-colors">Support & Donation</button></li>

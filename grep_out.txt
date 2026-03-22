@@ -1,0 +1,21 @@
+357:          <X className="w-5 h-5" />
+2325:                  <X className="w-5 h-5" />
+2408:              <X className="w-5 h-5" />
+2425:                    <Zap className="w-5 h-5 text-amber-500" /> Our Mission
+2443:                            <Icon className="w-5 h-5 text-indigo-500" aria-label={`Icon for ${feature.title}`} />
+2459:                    <History className="w-5 h-5 text-indigo-500" /> Evolution of Analysis
+2478:                      <Shield className="w-5 h-5 text-indigo-500" />
+2532:                    <Cpu className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
+2536:                    <Zap className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
+2540:                    <ShieldCheck className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+2544:                    <Globe className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+2781:            <Github className="w-5 h-5 text-white" />
+2791:            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+2800:            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+2821:                  <Github className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
+2834:                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+2841:                  <X className="w-5 h-5" />
+2935:                    <History className="w-5 h-5 text-zinc-400" />
+3054:                    <Search className="absolute left-4 lg:left-6 w-5 h-5 lg:w-6 lg:h-6 text-zinc-400 group-focus-within/input:text-indigo-500 transition-colors" />
+3124:                  <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
+3499:                    <Github className="w-5 h-5 shrink-0" />

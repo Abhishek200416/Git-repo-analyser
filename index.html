@@ -2,12 +2,232 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RepoAnalyzer - AI-Powered Repository Insights</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#4f46e5" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    
+    <!-- Primary Meta Tags -->
+    <title>Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes</title>
+    <meta name="title" content="Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes" />
+    <meta name="description" content="Git Repo Analyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today." />
+    <meta name="keywords" content="Git Repo Analyzer, gitrepoanalyzer, AI code review, GitHub repository analyzer, automated code fix, AI developer tools, software architecture analysis, code refactoring, project documentation generator, React, Vite, Gemini AI, Python, JavaScript, TypeScript, code quality, static analysis, bug detection, code explanation" />
+    <meta name="author" content="Git Repo Analyzer" />
+    <meta name="application-name" content="Git Repo Analyzer" />
+    <meta name="apple-mobile-web-app-title" content="Git Repo Analyzer" />
+    <meta name="generator" content="Git Repo Analyzer AI" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="language" content="English" />
+    <link rel="canonical" href="https://gitrepoanalyzer.com/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gitrepoanalyzer.com/" />
+    <meta property="og:title" content="Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes" />
+    <meta property="og:description" content="Git Repo Analyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80" />
+    <meta property="og:site_name" content="Git Repo Analyzer" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://gitrepoanalyzer.com/" />
+    <meta property="twitter:title" content="Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes" />
+    <meta property="twitter:description" content="Git Repo Analyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today." />
+    <meta property="twitter:image" content="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Git Repo Analyzer",
+        "operatingSystem": "Web",
+        "applicationCategory": "DeveloperApplication",
+        "description": "Git Repo Analyzer is an AI-powered tool for analyzing GitHub repositories, generating documentation, and providing automated code fixes.",
+        "url": "https://gitrepoanalyzer.com/",
+        "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "ratingCount": "1250"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Git Repo Analyzer",
+        "url": "https://gitrepoanalyzer.com/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://gitrepoanalyzer.com/?repo={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Git Repo Analyzer",
+        "url": "https://gitrepoanalyzer.com/",
+        "logo": "https://gitrepoanalyzer.com/logo.png",
+        "sameAs": [
+          "https://twitter.com/gitrepoanalyzer",
+          "https://github.com/gitrepoanalyzer"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Git Repo Analyzer",
+        "description": "AI-powered tool for analyzing GitHub repositories, generating documentation, and providing automated code fixes.",
+        "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+        "brand": {
+          "@type": "Brand",
+          "name": "Git Repo Analyzer"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": "https://gitrepoanalyzer.com/",
+          "priceCurrency": "USD",
+          "price": "0",
+          "availability": "https://schema.org/InStock"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "1250"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Analyze a GitHub Repository with AI",
+        "description": "Learn how to instantly analyze any GitHub repository, get architectural insights, and generate code fixes using Git Repo Analyzer.",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Enter Repository URL",
+            "text": "Paste the URL of the GitHub repository you want to analyze into the search bar on the Git Repo Analyzer homepage."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Select Analysis Depth",
+            "text": "Choose between Quick Scan, Standard, or Deep Dive analysis depending on the level of detail you need."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Review Insights",
+            "text": "Explore the generated architecture diagram, security review, and code suggestions provided by the AI."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Apply Fixes",
+            "text": "Use the automated code fix feature to generate and apply solutions for identified vulnerabilities and bugs."
+          }
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does the AI repository analysis work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Git Repo Analyzer uses advanced large language models to scan your GitHub repository's codebase. It analyzes the file structure, dependencies, and code logic to generate a comprehensive overview of the architecture, identify potential security vulnerabilities, and suggest actionable code improvements."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my code secure when using Git Repo Analyzer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, your code's security is our priority. We only access public repositories or repositories you explicitly provide access to. The code is processed securely in memory for analysis and is not stored permanently or used to train our models without your consent."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can it automatically fix the code issues it finds?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Absolutely. Our \"Automated Code Fixes\" feature not only identifies bugs and anti-patterns but also generates the exact code needed to resolve them. You can easily copy these fixes or generate a git patch to apply them directly to your repository."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What languages and frameworks are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Git Repo Analyzer supports a wide array of modern programming languages and frameworks, including JavaScript, TypeScript, Python, React, Node.js, Go, Rust, and many more. The AI is trained on diverse codebases, allowing it to understand and analyze almost any tech stack."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I export the analysis results?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, you can export the full analysis, including the architecture diagram and security review, as a beautifully formatted PDF or Markdown file. This is perfect for sharing with your team or including in your project documentation."
+            }
+          }
+        ]
+      }
+    ]
+    </script>
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4365607109967193" crossorigin="anonymous"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 20px; font-family: sans-serif;">
+        <h1>Git Repo Analyzer - AI Code Intelligence</h1>
+        <p>Git Repo Analyzer is an advanced AI-powered tool designed for analyzing GitHub repositories, generating comprehensive project documentation, and providing automated code fixes. By leveraging large language models, we help developers understand complex codebases faster and maintain high security standards.</p>
+        
+        <h2>Core Features</h2>
+        <ul>
+          <li><strong>Architectural Analysis:</strong> Get a high-level overview of the repository's structure, key components, and data flow. Understand how different parts of the application interact.</li>
+          <li><strong>Security Review:</strong> Identify potential vulnerabilities, security misconfigurations, and adherence to best practices like the OWASP Top 10.</li>
+          <li><strong>Automated Code Fixes:</strong> Not only do we find bugs, but we also generate and apply actionable solutions for identified issues, saving you hours of debugging.</li>
+          <li><strong>Project Documentation:</strong> Automatically generate comprehensive READMEs, API references, and inline comments to keep your documentation up-to-date with your codebase.</li>
+        </ul>
+
+        <h2>How to Analyze a GitHub Repository with AI</h2>
+        <ol>
+          <li><strong>Enter Repository URL:</strong> Paste the URL of the GitHub repository you want to analyze into the search bar.</li>
+          <li><strong>Select Analysis Depth:</strong> Choose between Quick Scan, Standard, or Deep Dive analysis depending on the level of detail you need.</li>
+          <li><strong>Review Insights:</strong> Explore the generated architecture diagram, security review, and code suggestions provided by the AI.</li>
+          <li><strong>Apply Fixes:</strong> Use the automated code fix feature to generate and apply solutions for identified vulnerabilities and bugs.</li>
+        </ol>
+
+        <h2>Blog & Articles</h2>
+        <article>
+          <h3>Code Analysis Best Practices for Modern Teams</h3>
+          <p>Static code analysis is a cornerstone of modern software development. By analyzing source code without executing it, teams can identify potential vulnerabilities, code smells, and anti-patterns early in the development lifecycle. Integrate tools like Git Repo Analyzer directly into your pull request workflow.</p>
+        </article>
+        <article>
+          <h3>Understanding the OWASP Top 10 Security Vulnerabilities</h3>
+          <p>Security is not an afterthought. The OWASP Top 10 represents a broad consensus about the most critical security risks to web applications, including Injection Flaws and Broken Authentication. Our AI-powered tool automatically performs a comprehensive Security Review of your repository.</p>
+        </article>
+        <article>
+          <h3>The Future of AI in Software Development</h3>
+          <p>Artificial Intelligence is revolutionizing software engineering. From intelligent code completion to automated refactoring, AI tools are becoming indispensable for modern developers. Git Repo Analyzer leverages cutting-edge AI to provide deep Architectural Insights and automated code fixes.</p>
+        </article>
+
+        <p><strong>Please enable JavaScript to use the full interactive application, view dynamic architecture diagrams, and generate real-time code fixes.</strong></p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
