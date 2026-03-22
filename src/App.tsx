@@ -21,7 +21,6 @@ import {
   ExternalLink, 
   Copy,
   Loader2,
-  Github,
   GitCompare,
   ChevronDown,
   ChevronRight,
@@ -98,8 +97,10 @@ import {
   removeMermaid,
   parsePhases
 } from './components/MarkdownComponents';
+import { SponsorsSection } from './components/SponsorsSection';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { CookieConsent } from './components/CookieConsent';
+import { ContactModal } from './components/ContactModal';
 import { AdBlockerModal } from './components/AdBlockerModal';
 import { Blog } from './components/Blog';
 import { FixModePrompt } from './components/FixModePrompt';
@@ -116,9 +117,10 @@ import { Comments } from './components/Comments';
 import { FEATURES, DOC_PHASE_INDICES } from './constants';
 import { generatePDF } from './utils/pdfExport';
 import { generateMarkdown, downloadMarkdown } from './utils/markdownExport';
-import { PopupAd } from './components/PopupAd';
+
 import { AdBanner } from './components/AdBanner';
 import { fetchWithTimeout, GitHubRateLimitError, parseGitHubUrl } from './services/github';
+import { canPerformAnalysis, recordAnalysis, getRemainingUnits, getDailyLimit } from './services/usage';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
@@ -146,6 +148,7 @@ const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text);
 };
 
+
 import { DiffView } from './components/DiffView';
 
 export default function App() {
@@ -162,6 +165,11 @@ export default function App() {
   const [loading, setLoading] = useState(() => {
     return localStorage.getItem('repoAnalyzerLoading') === 'true';
   });
+  const [remainingUnits, setRemainingUnits] = useState(getRemainingUnits());
+  
+  useEffect(() => {
+    setRemainingUnits(getRemainingUnits());
+  }, []);
   const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -281,14 +289,15 @@ export default function App() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
   const [showBlog, setShowBlog] = useState(false);
   const [hasAcceptedCookies, setHasAcceptedCookies] = useState(() => {
     return localStorage.getItem('repoAnalyzerCookiesAccepted') === 'true';
   });
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
-  const [showPopupAd, setShowPopupAd] = useState(false);
-  const [popupAdText, setPopupAdText] = useState("Special Offer!");
+
   const [isFixMode, setIsFixMode] = useState(false);
   const [categoryScores, setCategoryScores] = useState<Record<string, number> | null>(null);
   const [isGlowing, setIsGlowing] = useState(true);
@@ -298,7 +307,6 @@ export default function App() {
   const [showPRModal, setShowPRModal] = useState(false);
   const [showPRCommands, setShowPRCommands] = useState(false);
   const [prConfig, setPrConfig] = useState({ title: '', body: '', branch: 'fix/repo-analyzer-suggestions' });
-  const [showAboutModal, setShowAboutModal] = useState(false);
   const [findings, setFindings] = useState<string[]>([]);
   const [showFixPrompt, setShowFixPrompt] = useState(false);
   const [fixedFiles, setFixedFiles] = useState<Record<string, string>>({});
@@ -338,8 +346,7 @@ export default function App() {
         "Developer Tools Discount",
         "Premium Sponsor Content"
       ];
-      setPopupAdText(adTexts[Math.floor(Math.random() * adTexts.length)]);
-      setShowPopupAd(true);
+
     }, 45000); // Every 45 seconds
 
     return () => {
@@ -527,6 +534,9 @@ ${currentAnalysis.markdown.substring(0, 5000)}
 
   // Ad blocker detection
   useEffect(() => {
+    const isAdBlockDismissed = localStorage.getItem('repoAnalyzerAdBlockDismissed') === 'true';
+    if (isAdBlockDismissed) return;
+
     const checkAdBlock = async () => {
       try {
         const url = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
@@ -750,6 +760,11 @@ User Input: ${promptPrefix}${userMessage}
   };
 
   const executeAnalysis = async (targetUrl: string) => {
+      if (!canPerformAnalysis(analysisDepth)) {
+        setError(`Daily limit reached for ${analysisDepth} analysis. Please try again tomorrow.`);
+        return;
+      }
+      
       console.log("Executing analysis for:", targetUrl);
       const repoInfo = extractRepoInfo(targetUrl);
       if (!repoInfo) {
@@ -780,8 +795,7 @@ User Input: ${promptPrefix}${userMessage}
 
         // Trigger random pop-up ads during analysis
         if (Math.random() > 0.7) {
-          setPopupAdText(`Analysis Phase: ${step}`);
-          setShowPopupAd(true);
+
         }
       };
 
@@ -1396,6 +1410,8 @@ CRITICAL RULES
 
       setAnalysisProgress(100);
       setCurrentAnalysis(finalAnalysis);
+      recordAnalysis(analysisDepth);
+      setRemainingUnits(getRemainingUnits());
       setCompareAnalysis(null);
       setHistory(prev => [finalAnalysis, ...prev].slice(0, 50)); // Keep last 50 versions
       setUrl(''); // Clear input
@@ -1752,7 +1768,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 border-b border-black/5 dark:border-white/5 sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 shadow-sm">
         <div className="flex items-center gap-3 text-zinc-900 dark:text-zinc-100">
           <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-inner border border-white/10">
-            <Github className="w-5 h-5 text-white" />
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">GitRepoAnalyzer</span>
         </div>
@@ -1798,7 +1814,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="flex items-center gap-3 lg:gap-3.5 text-zinc-900 dark:text-zinc-100">
                 <div className="p-2 lg:p-2.5 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl lg:rounded-2xl shadow-lg shadow-indigo-500/20 border border-white/10 relative overflow-hidden group/logo">
                   <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/logo:animate-[shimmer_1.5s_infinite]"></div>
-                  <Github className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
+                  <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
                 </div>
                 <span className="text-xl lg:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">GitRepoAnalyzer</span>
               </div>
@@ -1891,25 +1907,32 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               </motion.div>
             )}
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between gap-2 px-2">
-                <div className="flex items-center gap-2.5 text-[11px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.25em]">
-                  <History className="w-4 h-4 text-indigo-500" />
-                  <span>History</span>
-                </div>
-                {history.length > 0 && (
-                  <button 
-                    onClick={() => setShowClearHistoryConfirm(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
-                    title="Clear All History"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Clear</span>
-                  </button>
-                )}
-              </div>
-              
-              {Object.keys(groupedHistory).length === 0 ? (
+            </div>
+          </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto relative w-full bg-zinc-50 dark:bg-zinc-950 lg:pl-96">
+        
+        {/* Advanced Background Effects */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
+          <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTUwLCAxNTAsIDE1MCwgMC4wNSkiLz48L3N2Zz4=')] opacity-50 mix-blend-overlay"></div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="p-3 sm:p-6 lg:p-12 max-w-full mx-auto w-full flex-1 relative z-10">
+          
+          <SponsorsSection />
+          
+          <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md p-8 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm mb-10">
+             <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                <History className="w-6 h-6 text-indigo-500" />
+                Recent Analyses
+             </h2>
+             {Object.keys(groupedHistory).length === 0 ? (
                 <div className="text-center py-10 px-4 border border-dashed border-black/10 dark:border-white/10 rounded-3xl bg-zinc-50/30 dark:bg-zinc-900/30">
                   <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3 opacity-50">
                     <History className="w-5 h-5 text-zinc-400" />
@@ -1979,31 +2002,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   })}
                 </ul>
               )}
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto relative w-full bg-zinc-50 dark:bg-zinc-950 lg:pl-96">
-        
-        {/* Advanced Background Effects */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
-          <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTUwLCAxNTAsIDE1MCwgMC4wNSkiLz48L3N2Zz4=')] opacity-50 mix-blend-overlay"></div>
-        </div>
-
-        {/* Top Ad Space */}
-        <AdBanner depth={analysisDepth} height="h-24" className="border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md relative z-10 shadow-sm" text="Top Leaderboard Ad" />
-        <AdBanner depth={analysisDepth} height="h-12" className="bg-indigo-500/5 dark:bg-indigo-500/10 border-b border-black/5 dark:border-white/5" text="Premium Feature Sponsor" />
-        <AdBanner depth={analysisDepth} height="h-8" className="bg-rose-500/5 dark:bg-rose-500/10 border-b border-black/5 dark:border-white/5" text="Flash Sale: 50% OFF" />
-        <AdBanner depth={analysisDepth} height="h-10" className="bg-amber-500/5 dark:bg-amber-500/10 border-b border-black/5 dark:border-white/5" text="New AI Tools Available" />
-
-        <div className="p-3 sm:p-6 lg:p-12 max-w-full mx-auto w-full flex-1 relative z-10">
-          <div className="min-w-0">
-            {/* Main Content Area */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2242,6 +2240,9 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                       <Zap className="w-4 h-4 lg:w-5 lg:h-5 relative z-10 group-hover/start:scale-110 transition-transform" />
                       <span className="relative z-10">Start Analysis</span>
                     </button>
+                    <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 self-center">
+                      {remainingUnits} / {getDailyLimit()} units remaining
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -2418,7 +2419,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </div>
               </div>
 
-              <AdBanner depth={analysisDepth} height="h-20" className="bg-white/50 dark:bg-zinc-900/50 rounded-3xl border border-black/5 dark:border-white/5" text="Deep Analysis Sponsor" />
 
               {/* Skeleton Loaders */}
               <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] space-y-8 lg:space-y-12 transition-colors duration-300 relative overflow-hidden group">
@@ -2476,14 +2476,11 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-base text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold transition-colors break-all group/link bg-indigo-500/10 hover:bg-indigo-500/20 px-4 py-2 rounded-xl"
                   >
-                    <Github className="w-5 h-5 shrink-0" />
-                    View on GitHub <ExternalLink className="w-4 h-4 shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
+                    <Sparkles className="w-5 h-5 shrink-0" />
+                    View Repository <ExternalLink className="w-4 h-4 shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
                   </a>
                 </div>
               </div>
-              <AdBanner depth={analysisDepth} height="h-16" className="border-b border-black/5 dark:border-white/5 bg-zinc-50/30 dark:bg-zinc-900/30" text="Analysis Header Sponsor" />
-              <AdBanner depth={analysisDepth} height="h-8" className="bg-amber-500/5 dark:bg-amber-500/10 border-b border-black/5 dark:border-white/5" text="Premium Content Ad" />
-              <AdBanner depth={analysisDepth} height="h-12" className="bg-indigo-500/5 dark:bg-indigo-500/10 border-b border-black/5 dark:border-white/5" text="Analysis Sidebar Sponsor" />
               
               {compareAnalysis ? (
                 <div className="p-6 sm:p-8 lg:p-12 relative z-10">
@@ -2556,13 +2553,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </div>
               ) : (
                 <div className="p-6 sm:p-8 lg:p-12 relative z-10">
-                  <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3 mb-8 lg:mb-10 border-b border-black/10 dark:border-white/10 pb-6 lg:pb-8">
-                    <AdBanner depth={analysisDepth} height="h-16" className="w-full mb-6 rounded-2xl border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/50" text="Analysis Toolbar Ad" />
-                  </div>
-
                   <div id="analysis-content" className="w-full max-w-full overflow-hidden flex flex-col">
-                    <AdBanner depth={analysisDepth} height="h-24" className="w-full mb-10 rounded-3xl border-black/5 dark:border-white/5 bg-white/50 dark:bg-zinc-900/50" text="Main Analysis Leaderboard" />
-                    
                     {/* Repository Quick Stats */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                       {[
@@ -2773,32 +2764,88 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               )}
             </motion.div>
           ) : (
-                  <motion.div 
-                    key="empty"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="text-center py-16 sm:py-24 lg:py-36 px-6 lg:px-10 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[3rem] bg-white/60 dark:bg-zinc-900/60 text-zinc-500 backdrop-blur-md transition-colors duration-300 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] relative overflow-hidden group/empty"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-purple-500/0 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
-                    <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[3rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    
-                    <div className="relative z-10">
-                      <div className="w-24 h-24 lg:w-28 lg:h-28 mx-auto bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 border border-black/5 dark:border-white/5 rounded-[2rem] flex items-center justify-center mb-10 shadow-2xl rotate-3 group-hover/empty:rotate-6 group-hover/empty:scale-105 transition-all duration-500 relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[2rem] opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
-                        <Github className="w-12 h-12 lg:w-14 lg:h-14 text-zinc-400 dark:text-zinc-500 group-hover/empty:text-indigo-500 transition-colors duration-500 relative z-10" />
+                  <div className="space-y-12">
+                    <motion.div 
+                      key="empty"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="text-center py-16 sm:py-24 lg:py-36 px-6 lg:px-10 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[3rem] bg-white/60 dark:bg-zinc-900/60 text-zinc-500 backdrop-blur-md transition-colors duration-300 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] relative overflow-hidden group/empty"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
+                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-purple-500/0 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
+                      <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[3rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                      
+                      <div className="relative z-10">
+                        <div className="w-24 h-24 lg:w-28 lg:h-28 mx-auto bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 border border-black/5 dark:border-white/5 rounded-[2rem] flex items-center justify-center mb-10 shadow-2xl rotate-3 group-hover/empty:rotate-6 group-hover/empty:scale-105 transition-all duration-500 relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[2rem] opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
+                          <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
+                          <Sparkles className="w-12 h-12 lg:w-14 lg:h-14 text-zinc-400 dark:text-zinc-500 group-hover/empty:text-indigo-500 transition-colors duration-500 relative z-10" />
+                        </div>
+                        <h2 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-white mb-5 tracking-tight group-hover/empty:text-transparent group-hover/empty:bg-clip-text group-hover/empty:bg-gradient-to-r group-hover/empty:from-indigo-600 group-hover/empty:to-purple-600 dark:group-hover/empty:from-indigo-400 dark:group-hover/empty:to-purple-400 transition-all duration-500">Ready to Analyze</h2>
+                        <p className="max-w-lg mx-auto leading-relaxed text-base lg:text-lg text-zinc-500 dark:text-zinc-400 font-medium">Paste a repository link above to get a detailed breakdown of its architecture, security, and a creative master prompt.</p>
                       </div>
-                      <h2 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-white mb-5 tracking-tight group-hover/empty:text-transparent group-hover/empty:bg-clip-text group-hover/empty:bg-gradient-to-r group-hover/empty:from-indigo-600 group-hover/empty:to-purple-600 dark:group-hover/empty:from-indigo-400 dark:group-hover/empty:to-purple-400 transition-all duration-500">Ready to Analyze</h2>
-                      <p className="max-w-lg mx-auto leading-relaxed text-base lg:text-lg text-zinc-500 dark:text-zinc-400 font-medium">Paste a GitHub repository link above to get a detailed breakdown of its architecture, security, and a creative master prompt.</p>
+                    </motion.div>
+
+                    {/* Publisher Content: Featured Insights */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="bg-white/40 dark:bg-zinc-900/40 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] backdrop-blur-sm">
+                        <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                          <div className="p-2 bg-indigo-500/10 rounded-xl">
+                            <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          Latest Insights
+                        </h3>
+                        <div className="space-y-6">
+                          {[
+                            { title: 'The Future of AI Code Analysis', date: 'Mar 20, 2026', excerpt: 'How large language models are revolutionizing the way we understand complex codebases.' },
+                            { title: 'Securing Your GitHub Workflow', date: 'Mar 18, 2026', excerpt: 'Best practices for keeping your repositories safe from common vulnerabilities and leaks.' },
+                            { title: 'Optimizing React Performance', date: 'Mar 15, 2026', excerpt: 'A deep dive into common bottlenecks in modern React applications and how to fix them.' }
+                          ].map((post, i) => (
+                            <div key={i} className="group cursor-pointer">
+                              <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">{post.date}</div>
+                              <h4 className="text-base font-bold text-zinc-900 dark:text-white group-hover:text-indigo-500 transition-colors mb-2">{post.title}</h4>
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{post.excerpt}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={() => setShowBlog(true)}
+                          className="mt-8 w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform"
+                        >
+                          Read All Articles
+                        </button>
+                      </div>
+
+                      <div className="bg-white/40 dark:bg-zinc-900/40 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] backdrop-blur-sm">
+                        <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                          <div className="p-2 bg-emerald-500/10 rounded-xl">
+                            <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          Core Features
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4">
+                          {FEATURES.map((feature) => (
+                            <div key={feature.id} className="flex items-start gap-4 p-4 bg-white/50 dark:bg-zinc-950/50 rounded-2xl border border-black/5 dark:border-white/5">
+                              <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                                <feature.icon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{feature.title}</h4>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400">{feature.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
           </div>
 
+          <AdBanner depth={analysisDepth} height="h-24" className="mb-8 rounded-3xl border border-black/10 dark:border-white/10 bg-zinc-500/5" text="Additional Sponsor Ad" />
         {/* About Section */}
         <div className="mt-auto relative overflow-hidden">
           <div className="absolute inset-0 bg-zinc-900 dark:bg-zinc-950"></div>
@@ -2967,15 +3014,29 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         onClose={() => setShowClearHistoryConfirm(false)}
         onConfirm={clearAllHistory}
       />
-      <PopupAd 
-        show={showPopupAd} 
-        onClose={() => setShowPopupAd(false)} 
-        text={popupAdText} 
+      <ContactModal 
+        show={showContactModal} 
+        onClose={() => setShowContactModal(false)} 
       />
       <AdBlockerModal 
         show={showAdBlockModal} 
         onClose={() => setShowAdBlockModal(false)} 
+        onDismissPermanently={() => localStorage.setItem('repoAnalyzerAdBlockDismissed', 'true')}
       />
+      <PrivacyModal show={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+      <TermsModal show={showTermsModal} onClose={() => setShowTermsModal(false)} />
+      <AboutModal show={showAboutModal} onClose={() => setShowAboutModal(false)} />
+
+      {/* Footer */}
+      <footer className="py-12 border-t border-black/5 dark:border-white/5 text-center">
+        <div className="flex justify-center gap-6 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+          <button onClick={() => setShowAboutModal(true)} className="hover:text-indigo-500 transition-colors">About</button>
+          <button onClick={() => setShowContactModal(true)} className="hover:text-indigo-500 transition-colors">Contact</button>
+          <button onClick={() => setShowPrivacyModal(true)} className="hover:text-indigo-500 transition-colors">Privacy</button>
+          <button onClick={() => setShowTermsModal(true)} className="hover:text-indigo-500 transition-colors">Terms</button>
+          <button onClick={() => setShowBlog(true)} className="hover:text-indigo-500 transition-colors">Blog</button>
+        </div>
+      </footer>
 
       {/* Floating Message Icon */}
       <AnimatePresence>

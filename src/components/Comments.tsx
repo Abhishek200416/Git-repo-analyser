@@ -202,7 +202,7 @@ export const Comments: React.FC = () => {
             <MessageSquare className="w-8 h-8 text-indigo-500" />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">Community Feedback</h2>
+            <h2 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">Comment Us</h2>
             <p className="text-zinc-500 dark:text-zinc-400 font-bold text-sm tracking-widest uppercase">Join the conversation</p>
           </div>
         </div>

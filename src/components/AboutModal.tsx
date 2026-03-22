@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Info, Zap, History, Heart, Shield, BookOpen, Cpu } from 'lucide-react';
+import { X, Info, Zap, History, Heart, Shield, BookOpen, Cpu, Star } from 'lucide-react';
 import { FEATURES } from '../constants';
 
 interface AboutModalProps {
@@ -235,6 +235,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ show, onClose }) => {
                     </p>
                   </div>
                 </section>
+
 
                 <section className="bg-indigo-500/5 dark:bg-indigo-500/10 p-8 rounded-[2rem] border border-indigo-500/20 text-center relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
