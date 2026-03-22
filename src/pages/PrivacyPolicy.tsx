@@ -8,7 +8,7 @@ export const PrivacyPolicy = ({ onBack }: { onBack: () => void }) => (
     </button>
     <h1 className="text-4xl font-black text-zinc-900 dark:text-white mb-8 tracking-tight">Privacy Policy</h1>
     <div className="prose prose-zinc dark:prose-invert max-w-none">
-      <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6">At RepoAnalyzer, we take your privacy seriously. This policy outlines how we handle your data when you use our repository intelligence platform.</p>
+      <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6">At GitRepoAnalyzer, we take your privacy seriously. This policy outlines how we handle your data when you use our repository intelligence platform.</p>
       
       <h2 className="text-2xl font-bold mt-8 mb-4">1. Data Collection</h2>
       <p>We collect minimal data required to provide our services, including GitHub repository URLs and basic analysis metadata. We do not store your source code permanently.</p>

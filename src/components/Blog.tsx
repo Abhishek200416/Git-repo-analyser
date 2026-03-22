@@ -22,7 +22,7 @@ const BLOG_POSTS: BlogPost[] = [
     category: 'Best Practices',
     date: '2023-10-15',
     readTime: '5 min read',
-    author: 'Git Repo Analyzer Team',
+    author: 'GitRepoAnalyzer Team',
     icon: Code,
     content: (
       <article className="space-y-6 text-zinc-700 dark:text-zinc-300 leading-relaxed">
@@ -30,7 +30,7 @@ const BLOG_POSTS: BlogPost[] = [
         
         <section>
           <h3 className="text-2xl font-black mt-8 mb-4 text-zinc-900 dark:text-white">1. Integrate Early and Often</h3>
-          <p>The best time to catch a bug is before it merges. Integrate tools like <a href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Git Repo Analyzer</a> directly into your pull request workflow. Automated checks ensure that no code is merged without meeting your quality standards.</p>
+          <p>The best time to catch a bug is before it merges. Integrate tools like <a href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">GitRepoAnalyzer</a> directly into your pull request workflow. Automated checks ensure that no code is merged without meeting your quality standards.</p>
         </section>
 
         <section>
@@ -69,7 +69,7 @@ const BLOG_POSTS: BlogPost[] = [
         </section>
 
         <section>
-          <h3 className="text-2xl font-black mt-8 mb-4 text-zinc-900 dark:text-white">How Git Repo Analyzer Helps</h3>
+          <h3 className="text-2xl font-black mt-8 mb-4 text-zinc-900 dark:text-white">How GitRepoAnalyzer Helps</h3>
           <p>Our AI-powered tool automatically performs a comprehensive <a href="/#security" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Security Review</a> of your repository. It scans for these common vulnerabilities and provides actionable fixes before your code reaches production, acting as an automated security auditor.</p>
         </section>
       </article>
@@ -99,8 +99,8 @@ const BLOG_POSTS: BlogPost[] = [
         </section>
 
         <section>
-          <h3 className="text-2xl font-black mt-8 mb-4 text-zinc-900 dark:text-white">The Git Repo Analyzer Advantage</h3>
-          <p>Git Repo Analyzer leverages cutting-edge AI to provide deep <a href="/#architecture" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Architectural Insights</a> and automated code fixes, acting as a tireless senior engineer on your team. By understanding the context of your entire repository, it provides suggestions that are contextually aware and highly accurate.</p>
+          <h3 className="text-2xl font-black mt-8 mb-4 text-zinc-900 dark:text-white">The GitRepoAnalyzer Advantage</h3>
+          <p>GitRepoAnalyzer leverages cutting-edge AI to provide deep <a href="/#architecture" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Architectural Insights</a> and automated code fixes, acting as a tireless senior engineer on your team. By understanding the context of your entire repository, it provides suggestions that are contextually aware and highly accurate.</p>
         </section>
       </article>
     )
@@ -116,7 +116,7 @@ export const Blog: React.FC<BlogProps> = ({ onClose }) => {
 
   useEffect(() => {
     if (selectedPost) {
-      document.title = `${selectedPost.title} | Git Repo Analyzer Blog`;
+      document.title = `${selectedPost.title} | GitRepoAnalyzer Blog`;
       
       // Update meta tags for article
       const metaOgType = document.querySelector('meta[property="og:type"]');
@@ -165,7 +165,7 @@ export const Blog: React.FC<BlogProps> = ({ onClose }) => {
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Git Repo Analyzer",
+          "name": "GitRepoAnalyzer",
           "logo": {
             "@type": "ImageObject",
             "url": "https://gitrepoanalyzer.com/logo.png"
@@ -181,11 +181,11 @@ export const Blog: React.FC<BlogProps> = ({ onClose }) => {
 
       return () => {
         // Reset meta tags
-        document.title = 'Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes';
+        document.title = 'GitRepoAnalyzer | AI-Powered GitHub Repository Analysis & Code Fixes';
         if (metaOgType) metaOgType.setAttribute('content', 'website');
-        if (metaOgTitle) metaOgTitle.setAttribute('content', 'Git Repo Analyzer | AI-Powered GitHub Repository Analysis & Code Fixes');
-        if (metaOgDesc) metaOgDesc.setAttribute('content', 'Git Repo Analyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today.');
-        if (metaDesc) metaDesc.setAttribute('content', 'Git Repo Analyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today.');
+        if (metaOgTitle) metaOgTitle.setAttribute('content', 'GitRepoAnalyzer | AI-Powered GitHub Repository Analysis & Code Fixes');
+        if (metaOgDesc) metaOgDesc.setAttribute('content', 'GitRepoAnalyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today.');
+        if (metaDesc) metaDesc.setAttribute('content', 'GitRepoAnalyzer is the ultimate AI tool to instantly analyze GitHub repositories. Get deep architectural insights, security reviews, automated code fixes, and generate comprehensive project documentation. Boost your developer productivity today.');
         
         const jsonLdScript = document.getElementById('article-json-ld');
         if (jsonLdScript) jsonLdScript.remove();
@@ -254,7 +254,7 @@ export const Blog: React.FC<BlogProps> = ({ onClose }) => {
               exit={{ opacity: 0 }}
             >
               <div className="mb-12">
-                <h1 className="text-4xl lg:text-6xl font-black mb-4 tracking-tight">Git Repo Analyzer <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Blog</span></h1>
+                <h1 className="text-4xl lg:text-6xl font-black mb-4 tracking-tight">GitRepoAnalyzer <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">Blog</span></h1>
                 <p className="text-lg text-zinc-500 dark:text-zinc-400 max-w-2xl">Insights, best practices, and updates on AI-powered software development, code analysis, and security.</p>
               </div>
 

@@ -8,7 +8,7 @@ export const TermsAndConditions = ({ onBack }: { onBack: () => void }) => (
     </button>
     <h1 className="text-4xl font-black text-zinc-900 dark:text-white mb-8 tracking-tight">Terms and Conditions</h1>
     <div className="prose prose-zinc dark:prose-invert max-w-none">
-      <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6">By using RepoAnalyzer, you agree to these terms. Please read them carefully.</p>
+      <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6">By using GitRepoAnalyzer, you agree to these terms. Please read them carefully.</p>
       
       <h2 className="text-2xl font-bold mt-8 mb-4">1. Acceptance of Terms</h2>
       <p>By accessing or using our services, you agree to be bound by these terms.</p>

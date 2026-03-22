@@ -1,5 +1,5 @@
 {
-  "name": "GitHub Repo Analyzer",
+  "name": "GitRepoAnalyzer",
   "description": "Analyzes GitHub repositories to provide architecture, security, and update recommendations.",
   "requestFramePermissions": []
 }

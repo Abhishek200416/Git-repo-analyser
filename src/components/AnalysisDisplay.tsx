@@ -32,24 +32,7 @@ import {
   removeMermaid,
   parsePhases
 } from './MarkdownComponents';
-
-// --- Types ---
-export interface AnalysisResult {
-  id: string;
-  url: string;
-  timestamp: number;
-  repoName: string;
-  markdown: string;
-  nodeDetails?: Record<string, string>;
-  categoryScores?: Record<string, number> | null;
-  fileTree?: string[];
-}
-
-interface Phase {
-  title: string;
-  content: string;
-  score?: string;
-}
+import { AnalysisResult, Phase } from '../types';
 
 // --- Main Component ---
 const getPhaseIcon = (title: string) => {

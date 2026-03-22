@@ -12,10 +12,14 @@ import {
   ExternalLink,
   Download,
   FileText,
-  RotateCcw
+  RotateCcw,
+  Check,
+  Code
 } from 'lucide-react';
 import mermaid from 'mermaid';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text);
@@ -148,9 +152,12 @@ export const MarkdownPre = ({ node, ...props }: any) => (
   </div>
 );
 
-export const MarkdownCode = ({ node, inline, className, children, theme, onNodeClick, nodeDetails, nodedetails, ...props }: any) => {
+export const MarkdownCode = ({ node, inline, className, children, theme, onNodeClick, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || '');
-  if (!inline && match && match[1] === 'mermaid') {
+  const language = match ? match[1] : '';
+  const [copied, setCopied] = useState(false);
+
+  if (!inline && language === 'mermaid') {
     return (
       <Mermaid 
         chart={String(children).replace(/\n$/, '')} 
@@ -159,12 +166,84 @@ export const MarkdownCode = ({ node, inline, className, children, theme, onNodeC
       />
     );
   }
+
+  if (!inline && language) {
+    return (
+      <div className="relative group my-6 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border-b border-black/10 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <Code className="w-4 h-4 text-zinc-500" />
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{language}</span>
+          </div>
+          <button 
+            onClick={() => {
+              copyToClipboard(String(children));
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors text-zinc-500"
+            title="Copy code"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+        <SyntaxHighlighter
+          style={theme === 'dark' ? vscDarkPlus : prism}
+          language={language}
+          PreTag="div"
+          customStyle={{
+            margin: 0,
+            padding: '1.25rem',
+            fontSize: '0.875rem',
+            lineHeight: '1.5',
+            backgroundColor: theme === 'dark' ? '#09090b' : '#f8fafc',
+          }}
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      </div>
+    );
+  }
+
   return (
     <code className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md text-xs lg:text-sm font-mono border border-indigo-500/20" {...props}>
       {children}
     </code>
   );
 };
+
+export const MarkdownTable = ({ children }: any) => (
+  <div className="my-8 w-full overflow-x-auto rounded-xl border border-black/10 dark:border-white/10 shadow-sm">
+    <table className="w-full text-sm text-left border-collapse">
+      {children}
+    </table>
+  </div>
+);
+
+export const MarkdownThead = ({ children }: any) => (
+  <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-black/10 dark:border-white/10">
+    {children}
+  </thead>
+);
+
+export const MarkdownTh = ({ children }: any) => (
+  <th className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100 border-r border-black/5 dark:border-white/5 last:border-r-0">
+    {children}
+  </th>
+);
+
+export const MarkdownTd = ({ children }: any) => (
+  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300 border-b border-black/5 dark:border-white/5 last:border-b-0 border-r border-black/5 dark:border-white/5 last:border-r-0">
+    {children}
+  </td>
+);
+
+export const MarkdownTr = ({ children }: any) => (
+  <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors last:border-b-0">
+    {children}
+  </tr>
+);
 
 export const MarkdownA = ({ children, ...props }: any) => (
   <a className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline" target="_blank" rel="noopener noreferrer" {...props}>
