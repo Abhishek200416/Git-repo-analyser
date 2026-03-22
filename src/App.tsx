@@ -21,6 +21,7 @@ import {
   ExternalLink, 
   Copy,
   Loader2,
+  Github,
   GitCompare,
   ChevronDown,
   ChevronRight,
@@ -83,6 +84,8 @@ import {
   Lock as LockIcon,
 } from 'lucide-react';
 
+import { AdBlockerModal } from './components/AdBlockerModal';
+
 import { 
   MarkdownH2,
   MarkdownPre,
@@ -97,11 +100,9 @@ import {
   removeMermaid,
   parsePhases
 } from './components/MarkdownComponents';
-import { SponsorsSection } from './components/SponsorsSection';
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { CookieConsent } from './components/CookieConsent';
 import { ContactModal } from './components/ContactModal';
-import { AdBlockerModal } from './components/AdBlockerModal';
 import { Blog } from './components/Blog';
 import { FixModePrompt } from './components/FixModePrompt';
 import { FixPromptModal } from './components/FixPromptModal';
@@ -118,7 +119,6 @@ import { FEATURES, DOC_PHASE_INDICES } from './constants';
 import { generatePDF } from './utils/pdfExport';
 import { generateMarkdown, downloadMarkdown } from './utils/markdownExport';
 
-import { AdBanner } from './components/AdBanner';
 import { fetchWithTimeout, GitHubRateLimitError, parseGitHubUrl } from './services/github';
 import { canPerformAnalysis, recordAnalysis, getRemainingUnits, getDailyLimit } from './services/usage';
 import { auth, db } from './firebase';
@@ -150,6 +150,7 @@ const copyToClipboard = (text: string) => {
 
 
 import { DiffView } from './components/DiffView';
+import { ScrollToTop } from './components/ScrollToTop';
 
 export default function App() {
   const [url, setUrl] = useState(() => {
@@ -534,9 +535,6 @@ ${currentAnalysis.markdown.substring(0, 5000)}
 
   // Ad blocker detection
   useEffect(() => {
-    const isAdBlockDismissed = localStorage.getItem('repoAnalyzerAdBlockDismissed') === 'true';
-    if (isAdBlockDismissed) return;
-
     const checkAdBlock = async () => {
       try {
         const url = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
@@ -1564,12 +1562,12 @@ CRITICAL RULES
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md"
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-zinc-950"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[3rem] p-10 border border-red-500/40 shadow-[0_0_50px_rgba(239,68,68,0.3)] text-center relative overflow-hidden max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[3rem] p-10 border border-red-500/40 shadow-[0_0_50px_rgba(239,68,68,0.3)] text-center relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-red-600 via-red-500 to-red-600 animate-pulse"></div>
               <div className="w-28 h-28 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-10 relative">
@@ -1583,49 +1581,19 @@ CRITICAL RULES
                 <br /><br />
                 To continue using the Repo Analyzer, please <span className="underline decoration-red-500 decoration-2 underline-offset-4">disable your ad blocker</span> and refresh the page.
               </p>
-              <div className="space-y-6">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="w-full py-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-[2rem] transition-all flex items-center justify-center gap-4 group shadow-2xl shadow-red-500/30 text-xl"
-                >
-                  <RefreshCw className="w-7 h-7 group-hover:rotate-180 transition-transform duration-1000" />
-                  I'VE DISABLED IT, REFRESH
-                </button>
-                
-                <div className="flex items-center gap-4 py-4">
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">OR SUPPORT US</span>
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
-                </div>
-
-                <button
-                  onClick={() => window.open('https://github.com/sponsors/abhishek20040916', '_blank')}
-                  className="w-full py-5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-black rounded-[2rem] transition-all flex items-center justify-center gap-3 border border-black/5 dark:border-white/5"
-                >
-                  <Heart className="w-6 h-6 text-rose-500 fill-rose-500/20" />
-                  SPONSOR TO REMOVE ADS
-                </button>
-
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.4em] font-black pt-4 opacity-60">
-                  Strict Ad Policy Enabled
-                </p>
-              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full py-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-[2rem] transition-all flex items-center justify-center gap-4 group shadow-2xl shadow-red-500/30 text-xl"
+              >
+                <RefreshCw className="w-7 h-7 group-hover:rotate-180 transition-transform duration-1000" />
+                I'VE DISABLED IT, REFRESH
+              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Donation Modal */}
-      <PRModal
-        show={showPRModal}
-        onClose={() => setShowPRModal(false)}
-        prConfig={prConfig}
-        setPrConfig={setPrConfig}
-        onGenerate={() => {
-          setShowPRModal(false);
-          setShowPRCommands(true);
-        }}
-      />
+
 
 
     <AnimatePresence>
@@ -1768,7 +1736,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 border-b border-black/5 dark:border-white/5 sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 shadow-sm">
         <div className="flex items-center gap-3 text-zinc-900 dark:text-zinc-100">
           <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-inner border border-white/10">
-            <Sparkles className="w-5 h-5 text-white" />
+            <Github className="w-5 h-5 text-white" />
           </div>
           <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">GitRepoAnalyzer</span>
         </div>
@@ -1814,7 +1782,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <div className="flex items-center gap-3 lg:gap-3.5 text-zinc-900 dark:text-zinc-100">
                 <div className="p-2 lg:p-2.5 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl lg:rounded-2xl shadow-lg shadow-indigo-500/20 border border-white/10 relative overflow-hidden group/logo">
                   <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/logo:animate-[shimmer_1.5s_infinite]"></div>
-                  <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
+                  <Github className="w-5 h-5 lg:w-6 lg:h-6 text-white relative z-10" />
                 </div>
                 <span className="text-xl lg:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">GitRepoAnalyzer</span>
               </div>
@@ -1907,32 +1875,25 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               </motion.div>
             )}
 
-            </div>
-          </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto relative w-full bg-zinc-50 dark:bg-zinc-950 lg:pl-96">
-        
-        {/* Advanced Background Effects */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
-          <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTUwLCAxNTAsIDE1MCwgMC4wNSkiLz48L3N2Zz4=')] opacity-50 mix-blend-overlay"></div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="p-3 sm:p-6 lg:p-12 max-w-full mx-auto w-full flex-1 relative z-10">
-          
-          <SponsorsSection />
-          
-          <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md p-8 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm mb-10">
-             <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                <History className="w-6 h-6 text-indigo-500" />
-                Recent Analyses
-             </h2>
-             {Object.keys(groupedHistory).length === 0 ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between gap-2 px-2">
+                <div className="flex items-center gap-2.5 text-[11px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.25em]">
+                  <History className="w-4 h-4 text-indigo-500" />
+                  <span>History</span>
+                </div>
+                {history.length > 0 && (
+                  <button 
+                    onClick={() => setShowClearHistoryConfirm(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
+                    title="Clear All History"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear</span>
+                  </button>
+                )}
+              </div>
+              
+              {Object.keys(groupedHistory).length === 0 ? (
                 <div className="text-center py-10 px-4 border border-dashed border-black/10 dark:border-white/10 rounded-3xl bg-zinc-50/30 dark:bg-zinc-900/30">
                   <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3 opacity-50">
                     <History className="w-5 h-5 text-zinc-400" />
@@ -2002,6 +1963,26 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   })}
                 </ul>
               )}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative w-full bg-zinc-50 dark:bg-zinc-950 lg:pl-96">
+        
+        {/* Advanced Background Effects */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-[150px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
+          <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTUwLCAxNTAsIDE1MCwgMC4wNSkiLz48L3N2Zz4=')] opacity-50 mix-blend-overlay"></div>
+        </div>
+
+
+        <div className="p-3 sm:p-6 lg:p-12 max-w-full mx-auto w-full flex-1 relative z-10">
+          <div className="min-w-0">
+            {/* Main Content Area */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2021,9 +2002,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               </h1>
               <p className="text-zinc-500 dark:text-zinc-400 mb-6 lg:mb-10 text-sm sm:text-base lg:text-lg font-medium max-w-2xl">Enter a GitHub repository URL to generate a comprehensive AI-powered analysis, architecture diagram, security review, and automated code fixes. Optimize your code and generate project documentation instantly.</p>
               
-              <AdBanner depth={analysisDepth} height="h-20" className="mb-6 lg:mb-10 rounded-2xl lg:rounded-3xl border border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/50" text="Search Header Ad" />
-              <AdBanner depth={analysisDepth} height="h-12" className="mb-4 rounded-xl border border-black/5 dark:border-white/5 bg-blue-500/5" text="Cloud Hosting Deals" />
-              <AdBanner depth={analysisDepth} height="h-12" className="mb-4 rounded-xl border border-black/5 dark:border-white/5 bg-purple-500/5" text="Hire Top Developers" />
               
               <form onSubmit={handleAnalyzeClick} className="flex gap-3 lg:gap-4 flex-col sm:flex-row items-stretch">
                 <div className="relative flex-1 group/input">
@@ -2088,8 +2066,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 </button>
               </form>
               
-              <AdBanner depth={analysisDepth} height="h-16" className="mt-6 lg:mt-10 rounded-2xl border border-black/5 dark:border-white/5 bg-zinc-50/30 dark:bg-zinc-900/30" text="Search Footer Ad" />
-              <AdBanner depth={analysisDepth} height="h-24" className="mt-4 rounded-2xl border border-black/5 dark:border-white/5 bg-emerald-500/5" text="Green Energy Hosting" />
 
               {error && (
                 <motion.div 
@@ -2106,17 +2082,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             </div>
           </motion.div>
 
-          <AdBanner depth={analysisDepth} height="h-20" className="mb-6 rounded-2xl border border-black/10 dark:border-white/10" text="In-Feed Ad Placement" />
-          <AdBanner depth={analysisDepth} height="h-20" className="mb-6 rounded-2xl border border-black/10 dark:border-white/10 bg-orange-500/5" text="E-commerce Solutions" />
-          <AdBanner depth={analysisDepth} height="h-20" className="mb-6 rounded-2xl border border-black/10 dark:border-white/10 bg-cyan-500/5" text="Cybersecurity Audit" />
-          <AdBanner depth={analysisDepth} height="h-20" className="mb-6 rounded-2xl border border-black/10 dark:border-white/10 bg-rose-500/5" text="Summer Sale: 70% OFF" />
-          <AdBanner depth={analysisDepth} height="h-20" className="mb-6 rounded-2xl border border-black/10 dark:border-white/10 bg-indigo-500/5" text="New AI Features" />
 
-          {!currentAnalysis && !isConfiguring && (
-            <div className="mb-12">
-              <AdBanner depth={analysisDepth} height="h-24 lg:h-32" text="Pre-Analysis Featured Sponsor" className="rounded-[2rem] border-black/5 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md" />
-            </div>
-          )}
 
           {/* Results Area */}
           <AnimatePresence mode="wait">
@@ -2180,7 +2146,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   </div>
                 </div>
                 
-                <AdBanner depth={analysisDepth} height="h-24" className="mb-8 lg:mb-12 rounded-3xl border border-black/5 dark:border-white/5 bg-white/50 dark:bg-zinc-900/50 shadow-sm" text="Feature Selection Ad" />
 
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-8 lg:mb-12 relative z-10">
                   {FEATURES.map((f, i) => {
@@ -2256,7 +2221,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 exit={{ opacity: 0, y: -20 }}
                 className="w-full space-y-6"
               >
-                <AdBanner depth={analysisDepth} height="h-20" className="bg-white/50 dark:bg-zinc-900/50 rounded-3xl border border-black/5 dark:border-white/5" text="Analysis Sponsor" />
                 
                 {/* Progress Section */}
               <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] transition-colors duration-300 relative overflow-hidden group">
@@ -2476,8 +2440,8 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-base text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold transition-colors break-all group/link bg-indigo-500/10 hover:bg-indigo-500/20 px-4 py-2 rounded-xl"
                   >
-                    <Sparkles className="w-5 h-5 shrink-0" />
-                    View Repository <ExternalLink className="w-4 h-4 shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
+                    <Github className="w-5 h-5 shrink-0" />
+                    View on GitHub <ExternalLink className="w-4 h-4 shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
                   </a>
                 </div>
               </div>
@@ -2753,12 +2717,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         </div>
                       </motion.div>
                     )}
-                    <div className="mt-16 pt-10 border-t border-black/10 dark:border-white/10">
-                      <AdBanner depth={analysisDepth} height="h-32 lg:h-40" text="In-Content Advertisement" />
-                      <div className="mt-12">
-                        <AdBanner depth={analysisDepth} height="h-24 lg:h-28" text="Main Page Footer Ad" className="rounded-3xl border-black/5 dark:border-white/5 bg-white/50 dark:bg-zinc-900/50" />
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
@@ -2780,10 +2738,10 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         <div className="w-24 h-24 lg:w-28 lg:h-28 mx-auto bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 border border-black/5 dark:border-white/5 rounded-[2rem] flex items-center justify-center mb-10 shadow-2xl rotate-3 group-hover/empty:rotate-6 group-hover/empty:scale-105 transition-all duration-500 relative">
                           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[2rem] opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
                           <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-xl opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500"></div>
-                          <Sparkles className="w-12 h-12 lg:w-14 lg:h-14 text-zinc-400 dark:text-zinc-500 group-hover/empty:text-indigo-500 transition-colors duration-500 relative z-10" />
+                          <Github className="w-12 h-12 lg:w-14 lg:h-14 text-zinc-400 dark:text-zinc-500 group-hover/empty:text-indigo-500 transition-colors duration-500 relative z-10" />
                         </div>
                         <h2 className="text-2xl lg:text-3xl font-extrabold text-zinc-900 dark:text-white mb-5 tracking-tight group-hover/empty:text-transparent group-hover/empty:bg-clip-text group-hover/empty:bg-gradient-to-r group-hover/empty:from-indigo-600 group-hover/empty:to-purple-600 dark:group-hover/empty:from-indigo-400 dark:group-hover/empty:to-purple-400 transition-all duration-500">Ready to Analyze</h2>
-                        <p className="max-w-lg mx-auto leading-relaxed text-base lg:text-lg text-zinc-500 dark:text-zinc-400 font-medium">Paste a repository link above to get a detailed breakdown of its architecture, security, and a creative master prompt.</p>
+                        <p className="max-w-lg mx-auto leading-relaxed text-base lg:text-lg text-zinc-500 dark:text-zinc-400 font-medium">Paste a GitHub repository link above to get a detailed breakdown of its architecture, security, and a creative master prompt.</p>
                       </div>
                     </motion.div>
 
@@ -2845,7 +2803,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             </div>
           </div>
 
-          <AdBanner depth={analysisDepth} height="h-24" className="mb-8 rounded-3xl border border-black/10 dark:border-white/10 bg-zinc-500/5" text="Additional Sponsor Ad" />
         {/* About Section */}
         <div className="mt-auto relative overflow-hidden">
           <div className="absolute inset-0 bg-zinc-900 dark:bg-zinc-950"></div>
@@ -2930,7 +2887,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           </div>
         </div>
 
-        <Comments />
+        <Comments adBlockDetected={adBlockDetected} />
 
         {/* Footer */}
         <footer className="bg-zinc-950 py-12 border-t border-white/10 relative z-10">
@@ -3020,8 +2977,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
       />
       <AdBlockerModal 
         show={showAdBlockModal} 
-        onClose={() => setShowAdBlockModal(false)} 
-        onDismissPermanently={() => localStorage.setItem('repoAnalyzerAdBlockDismissed', 'true')}
+        onClose={() => setShowAdBlockModal(false)}
       />
       <PrivacyModal show={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
       <TermsModal show={showTermsModal} onClose={() => setShowTermsModal(false)} />
@@ -3084,7 +3040,18 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           }
         }}
       />
+      <ScrollToTop />
       </div>
+      <PRModal
+        show={showPRModal}
+        onClose={() => setShowPRModal(false)}
+        prConfig={prConfig}
+        setPrConfig={setPrConfig}
+        onGenerate={() => {
+          setShowPRModal(false);
+          setShowPRCommands(true);
+        }}
+      />
     </ErrorBoundary>
   );
 }

@@ -44,7 +44,11 @@ interface Comment {
   repoUrl?: string;
 }
 
-export const Comments: React.FC = () => {
+interface CommentsProps {
+  adBlockDetected: boolean;
+}
+
+export const Comments: React.FC<CommentsProps> = ({ adBlockDetected }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [rating, setRating] = useState(5);
@@ -134,6 +138,7 @@ export const Comments: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (adBlockDetected) return;
     if (!newComment.trim() && !imageUrl) return;
     if (!user) {
       setError("Please sign in to post a comment.");
@@ -271,7 +276,8 @@ export const Comments: React.FC = () => {
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Share your thoughts..."
+                      placeholder={adBlockDetected ? "Ad blocker detected. Please disable it to comment." : "Share your thoughts..."}
+                      disabled={adBlockDetected}
                       className="w-full bg-zinc-50 dark:bg-zinc-800/50 border border-black/5 dark:border-white/5 rounded-2xl p-3 text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none h-20 font-medium text-sm"
                     />
                     
@@ -283,6 +289,7 @@ export const Comments: React.FC = () => {
                             key={star}
                             type="button"
                             onClick={() => setRating(star)}
+                            disabled={adBlockDetected}
                             className="focus:outline-none transition-transform hover:scale-110"
                           >
                             <Star 
@@ -299,6 +306,7 @@ export const Comments: React.FC = () => {
                         <button 
                           type="button"
                           onClick={() => setImageUrl('')}
+                          disabled={adBlockDetected}
                           className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 transition-colors"
                         >
                           <X className="w-3 h-3" />
@@ -318,6 +326,7 @@ export const Comments: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
+                          disabled={adBlockDetected}
                           className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
                           title="Add Image"
                         >
@@ -331,7 +340,7 @@ export const Comments: React.FC = () => {
                       </div>
                       <button
                         type="submit"
-                        disabled={!newComment.trim() && !imageUrl}
+                        disabled={adBlockDetected || (!newComment.trim() && !imageUrl)}
                         className="px-5 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2 uppercase tracking-widest text-[10px] shadow-lg"
                       >
                         Post
@@ -389,7 +398,7 @@ export const Comments: React.FC = () => {
                           {(user && (user.uid === comment.uid || user?.email === 'abhishek20040916@gmail.com')) && (
                             <button
                               onClick={() => handleDelete(comment.id)}
-                              className="p-1 text-zinc-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
                               title="Delete comment"
                             >
                               <Trash2 className="w-3 h-3" />

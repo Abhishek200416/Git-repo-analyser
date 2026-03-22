@@ -4,20 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface AdBlockerModalProps {
   show: boolean;
   onClose: () => void;
-  onDismissPermanently: () => void;
 }
 
 export const AdBlockerModal: React.FC<AdBlockerModalProps> = ({
   show,
   onClose,
-  onDismissPermanently
 }) => {
-  const [dontShowAgain, setDontShowAgain] = React.useState(false);
-
   const handleDismiss = () => {
-    if (dontShowAgain) {
-      onDismissPermanently();
-    }
     onClose();
   };
 
@@ -36,13 +29,6 @@ export const AdBlockerModal: React.FC<AdBlockerModalProps> = ({
               We rely on ads to keep our services free for everyone. Please consider disabling your ad blocker for this site to help us continue providing high-quality analysis.
             </p>
             
-            <div className="flex items-center gap-2 mb-6 cursor-pointer group" onClick={() => setDontShowAgain(!dontShowAgain)}>
-              <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${dontShowAgain ? 'bg-indigo-500 border-indigo-500' : 'border-zinc-300 dark:border-zinc-700 group-hover:border-indigo-500'}`}>
-                {dontShowAgain && <div className="w-2 h-2 bg-white rounded-full" />}
-              </div>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest">Don't show this again</span>
-            </div>
-
             <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={handleDismiss}
