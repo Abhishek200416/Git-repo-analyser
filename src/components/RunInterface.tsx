@@ -83,7 +83,7 @@ export const RunInterface: React.FC<RunInterfaceProps> = ({
       className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden"
     >
       {/* Top Navigation Bar */}
-      <header className="h-16 border-b border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
+      <header className="h-16 border-b border-white/10 bg-zinc-900 flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center gap-4">
           <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
             <Cpu className="w-5 h-5 text-indigo-400" />

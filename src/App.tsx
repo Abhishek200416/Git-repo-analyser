@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { renderToString } from 'react-dom/server';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { GoogleGenAI } from '@google/genai';
@@ -103,7 +102,7 @@ import {
 import { AnalysisDisplay } from './components/AnalysisDisplay';
 import { CookieConsent } from './components/CookieConsent';
 import { ContactModal } from './components/ContactModal';
-import { Blog } from './components/Blog';
+import Blog from './components/Blog';
 import { FixModePrompt } from './components/FixModePrompt';
 import { FixPromptModal } from './components/FixPromptModal';
 import { AboutModal } from './components/AboutModal';
@@ -114,8 +113,8 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { CookieModal } from './components/CookieModal';
 import { PRModal } from './components/PRModal';
 import { ClearHistoryModal } from './components/ClearHistoryModal';
-import { Comments } from './components/Comments';
 import { FEATURES, DOC_PHASE_INDICES } from './constants';
+import { BLOG_POSTS } from './blog-data';
 import { generatePDF } from './utils/pdfExport';
 import { generateMarkdown, downloadMarkdown } from './utils/markdownExport';
 
@@ -149,10 +148,12 @@ const copyToClipboard = (text: string) => {
 };
 
 
+import { useError } from './components/GlobalErrorDisplay';
 import { DiffView } from './components/DiffView';
 import { ScrollToTop } from './components/ScrollToTop';
 
 export default function App() {
+  const { showError } = useError();
   const [url, setUrl] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -211,8 +212,14 @@ export default function App() {
     const saved = localStorage.getItem('repoAnalyzerCurrentAnalysis');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id && parsed.markdown) {
+          return parsed;
+        }
+        localStorage.removeItem('repoAnalyzerCurrentAnalysis');
+        return null;
       } catch (e) {
+        localStorage.removeItem('repoAnalyzerCurrentAnalysis');
         return null;
       }
     }
@@ -311,27 +318,6 @@ export default function App() {
   const [findings, setFindings] = useState<string[]>([]);
   const [showFixPrompt, setShowFixPrompt] = useState(false);
   const [fixedFiles, setFixedFiles] = useState<Record<string, string>>({});
-  const [isCommentsInView, setIsCommentsInView] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsCommentsInView(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    const commentsSection = document.getElementById('comments-section');
-    if (commentsSection) {
-      observer.observe(commentsSection);
-    }
-
-    return () => {
-      if (commentsSection) {
-        observer.unobserve(commentsSection);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -451,7 +437,7 @@ ${currentAnalysis.markdown.substring(0, 5000)}
       toast.success('Fixes generated successfully!', { id: toastId });
       return fixedFiles;
     } catch (error) {
-      console.error("Fix generation failed:", error);
+      showError("Fix generation failed: " + (error instanceof Error ? error.message : String(error)));
       toast.error('Failed to generate fixes. Please try again.', { id: toastId });
       return null;
     } finally {
@@ -729,7 +715,7 @@ User Input: ${promptPrefix}${userMessage}
 
       setChatMessages(prev => [...prev, { role: 'model', text: response.text || 'No response generated.' }]);
     } catch (err) {
-      console.error("Chat Error:", err);
+      showError("Chat Error: " + (err instanceof Error ? err.message : String(err)));
       setChatMessages(prev => [...prev, { role: 'model', text: 'Sorry, I encountered an error while processing your request.' }]);
     } finally {
       setIsChatLoading(false);
@@ -1415,7 +1401,7 @@ CRITICAL RULES
       setUrl(''); // Clear input
       addLog('Deep Process: Analysis pipeline successfully finalized. Results are ready.');
     } catch (err: any) {
-      console.error("Analysis Error:", err);
+      showError("Analysis Error: " + (err instanceof Error ? err.message : String(err)));
       let errorMessage = 'An unexpected error occurred during analysis.';
       
       if (err instanceof GitHubRateLimitError) {
@@ -1550,7 +1536,7 @@ CRITICAL RULES
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[100] bg-zinc-50 dark:bg-zinc-950 overflow-y-auto"
           >
-            <Blog onClose={() => setShowBlog(false)} />
+            <Blog show={showBlog} onClose={() => setShowBlog(false)} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -1598,7 +1584,7 @@ CRITICAL RULES
 
     <AnimatePresence>
       {showPRCommands && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/90 backdrop-blur-md">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1733,7 +1719,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
       {/* Mobile Header */}
 
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 border-b border-black/5 dark:border-white/5 sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 shadow-sm">
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-zinc-950 border-b border-black/5 dark:border-white/5 sticky top-0 z-40 transition-colors duration-300 shadow-sm">
         <div className="flex items-center gap-3 text-zinc-900 dark:text-zinc-100">
           <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-inner border border-white/10">
             <Github className="w-5 h-5 text-white" />
@@ -1768,11 +1754,11 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-md transition-opacity" onClick={() => setIsSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/80 z-40 lg:hidden transition-opacity" onClick={() => setIsSidebarOpen(false)} />
       )}
 
       {/* Sidebar - History */}
-      <aside id="sidebar" className={`fixed top-0 left-0 h-[100dvh] w-[85vw] sm:w-80 lg:w-96 bg-white/95 dark:bg-zinc-950/95 lg:bg-white/80 lg:dark:bg-zinc-950/80 border-r border-black/5 dark:border-white/5 flex flex-col z-50 lg:z-20 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} backdrop-blur-md shadow-[8px_0_40px_rgba(0,0,0,0.08)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.4)] overflow-hidden`}>
+      <aside id="sidebar" className={`fixed top-0 left-0 h-[100dvh] w-[85vw] sm:w-80 lg:w-96 bg-white dark:bg-zinc-950 border-r border-black/5 dark:border-white/5 flex flex-col z-50 lg:z-20 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-[8px_0_40px_rgba(0,0,0,0.08)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.4)] overflow-hidden`}>
         <div className="p-5 lg:p-8 border-b border-black/5 dark:border-white/5 bg-zinc-50/80 dark:bg-zinc-900/80 flex flex-col gap-4 lg:gap-5 relative overflow-hidden group/header shrink-0">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover/header:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
@@ -1852,7 +1838,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md border border-black/5 dark:border-white/5 rounded-2xl p-5 shadow-sm"
+                className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl p-5 shadow-sm"
               >
                 <h4 className="text-[10px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5 text-indigo-500" />
@@ -1905,7 +1891,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   {Object.entries(groupedHistory).map(([repoName, versions]) => {
                     const isExpanded = expandedRepos[repoName];
                     return (
-                      <li key={repoName} className="group/repo border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-sm transition-all hover:border-black/10 dark:hover:border-white/10 hover:shadow-md">
+                      <li key={repoName} className="group/repo border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all hover:border-black/10 dark:hover:border-white/10 hover:shadow-md">
                         <button
                           onClick={() => toggleRepo(repoName)}
                           className="w-full flex items-center justify-between p-3.5 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors"
@@ -1987,7 +1973,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md p-6 sm:p-8 lg:p-12 rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 mb-6 lg:mb-10 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] overflow-hidden group"
+            className="relative bg-white dark:bg-zinc-900 p-6 sm:p-8 lg:p-12 rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 mb-6 lg:mb-10 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] overflow-hidden group"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
@@ -2093,7 +2079,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -20 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] overflow-hidden p-6 sm:p-8 lg:p-12 relative group/config"
+                className="bg-white dark:bg-zinc-900 rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] overflow-hidden p-6 sm:p-8 lg:p-12 relative group/config"
               >
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover/config:opacity-100 transition-opacity duration-700"></div>
@@ -2175,7 +2161,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         <p className="relative z-10 text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium break-words mb-4 flex-1">{f.description}</p>
                         
                         <div className="mt-auto pt-3 border-t border-black/5 dark:border-white/5 flex justify-end">
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm backdrop-blur-sm w-full justify-center">
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm w-full justify-center">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
                             Ready
                           </span>
@@ -2223,7 +2209,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               >
                 
                 {/* Progress Section */}
-              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] transition-colors duration-300 relative overflow-hidden group">
+              <div className="bg-white dark:bg-zinc-900 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] transition-colors duration-300 relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                 <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-3xl lg:rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
@@ -2385,7 +2371,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
 
               {/* Skeleton Loaders */}
-              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] space-y-8 lg:space-y-12 transition-colors duration-300 relative overflow-hidden group">
+              <div className="bg-white dark:bg-zinc-900 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] space-y-8 lg:space-y-12 transition-colors duration-300 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                 <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-3xl lg:rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                 
@@ -2418,7 +2404,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 overflow-hidden flex flex-col shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] transition-colors duration-300 relative group"
+              className="bg-white dark:bg-zinc-900 rounded-3xl lg:rounded-[2.5rem] border border-white/20 dark:border-white/10 overflow-hidden flex flex-col shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] transition-colors duration-300 relative group"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-80"></div>
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -2521,12 +2507,12 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                     {/* Repository Quick Stats */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                       {[
-                        { label: 'Files Analyzed', value: currentAnalysis.fileTree.length.toString(), icon: FileText, color: 'text-blue-500' },
+                        { label: 'Files Analyzed', value: (currentAnalysis.fileTree?.length || 0).toString(), icon: FileText, color: 'text-blue-500' },
                         { label: 'Architecture Nodes', value: Object.keys(currentAnalysis.nodeDetails || {}).length || '42', icon: Network, color: 'text-indigo-500' },
                         { label: 'Security Score', value: '94%', icon: Shield, color: 'text-emerald-500' },
                         { label: 'Optimization', value: 'High', icon: Zap, color: 'text-amber-500' },
                       ].map((stat, i) => (
-                        <div key={i} className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                        <div key={i} className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
                           <div className="flex items-center gap-3 mb-2">
                             <stat.icon className={`w-4 h-4 ${stat.color} transition-transform group-hover:scale-110`} />
                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{stat.label}</span>
@@ -2620,7 +2606,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                               </div>
                               <p className="text-zinc-400 font-medium text-sm lg:text-base leading-relaxed">Select identified issues below. Our AI will clone, update, and package the repository for you with surgical precision.</p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-black/40 p-2 sm:p-3 rounded-2xl sm:rounded-3xl border border-white/5 backdrop-blur-md">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-black/60 p-2 sm:p-3 rounded-2xl sm:rounded-3xl border border-white/5">
                               <button 
                                 onClick={() => setSelectedFindings([])}
                                 className="px-3 sm:px-5 py-1.5 sm:py-2.5 text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-widest hover:text-white hover:bg-white/10 rounded-lg sm:rounded-xl transition-all active:scale-95"
@@ -2728,7 +2714,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="text-center py-16 sm:py-24 lg:py-36 px-6 lg:px-10 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[3rem] bg-white/60 dark:bg-zinc-900/60 text-zinc-500 backdrop-blur-md transition-colors duration-300 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] relative overflow-hidden group/empty"
+                      className="text-center py-16 sm:py-24 lg:py-36 px-6 lg:px-10 border border-white/20 dark:border-white/10 rounded-3xl lg:rounded-[3rem] bg-white dark:bg-zinc-900 text-zinc-500 transition-colors duration-300 shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] relative overflow-hidden group/empty"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-purple-500/0 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-700"></div>
@@ -2747,23 +2733,23 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
 
                     {/* Publisher Content: Featured Insights */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="bg-white/40 dark:bg-zinc-900/40 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] backdrop-blur-sm">
+                      <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem]">
                         <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
                           <div className="p-2 bg-indigo-500/10 rounded-xl">
                             <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                           </div>
                           Latest Insights
                         </h3>
-                        <div className="space-y-6">
-                          {[
-                            { title: 'The Future of AI Code Analysis', date: 'Mar 20, 2026', excerpt: 'How large language models are revolutionizing the way we understand complex codebases.' },
-                            { title: 'Securing Your GitHub Workflow', date: 'Mar 18, 2026', excerpt: 'Best practices for keeping your repositories safe from common vulnerabilities and leaks.' },
-                            { title: 'Optimizing React Performance', date: 'Mar 15, 2026', excerpt: 'A deep dive into common bottlenecks in modern React applications and how to fix them.' }
-                          ].map((post, i) => (
-                            <div key={i} className="group cursor-pointer">
-                              <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">{post.date}</div>
-                              <h4 className="text-base font-bold text-zinc-900 dark:text-white group-hover:text-indigo-500 transition-colors mb-2">{post.title}</h4>
-                              <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{post.excerpt}</p>
+                        <div className="space-y-4">
+                          {BLOG_POSTS.slice(0, 3).map((post, i) => (
+                            <div 
+                              key={i} 
+                              className="group cursor-pointer p-4 rounded-2xl bg-white/30 dark:bg-zinc-950/30 border border-transparent hover:border-indigo-500/30 hover:bg-white/50 dark:hover:bg-zinc-950/50 transition-all duration-300" 
+                              onClick={() => setShowBlog(true)}
+                            >
+                              <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{post.date}</div>
+                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1 line-clamp-1">{post.title}</h4>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">{post.excerpt}</p>
                             </div>
                           ))}
                         </div>
@@ -2775,7 +2761,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         </button>
                       </div>
 
-                      <div className="bg-white/40 dark:bg-zinc-900/40 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] backdrop-blur-sm">
+                      <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem]">
                         <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
                           <div className="p-2 bg-emerald-500/10 rounded-xl">
                             <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -2797,6 +2783,112 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                         </div>
                       </div>
                     </div>
+
+                    {/* How It Works Section */}
+                    <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 sm:p-12 rounded-[2.5rem]">
+                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-8 uppercase tracking-tight text-center">How It Works</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {[
+                          { step: '01', title: 'Connect Repo', desc: 'Simply paste any public GitHub repository URL into our analyzer. We support all major languages and frameworks.' },
+                          { step: '02', title: 'AI Analysis', desc: 'Our advanced AI models scan the codebase to map architecture, identify security risks, and evaluate code quality.' },
+                          { step: '03', title: 'Get Insights', desc: 'Receive a comprehensive report with interactive diagrams, security audits, and automated code fixes.' }
+                        ].map((item, i) => (
+                          <div key={i} className="text-center">
+                            <div className="text-4xl font-black text-indigo-500/20 mb-4">{item.step}</div>
+                            <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{item.title}</h4>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">{item.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Why Choose Us Section */}
+                    <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 sm:p-12 rounded-[2.5rem]">
+                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-8 uppercase tracking-tight text-center">Why GitRepoAnalyzer?</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                            Security First
+                          </h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            We prioritize your code's security. Our analysis identifies hardcoded secrets, insecure dependencies, and potential injection points before they become a problem. In 2026, we've introduced "Predictive Security," which anticipates vulnerabilities before they are even committed.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                            <Layers className="w-5 h-5 text-indigo-500" />
+                            Deep Architecture
+                          </h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Unlike simple linters, we understand the relationships between components. Our AI maps out the data flow and architectural patterns of your entire project, providing a 360-degree view of your system's health and scalability.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-amber-500" />
+                            Automated Fixes
+                          </h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Don't just find issues—fix them. Our AI generates ready-to-use code snippets and patches to resolve identified bugs and performance bottlenecks instantly, saving you hours of manual refactoring.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                            <Globe className="w-5 h-5 text-blue-500" />
+                            Universal Support
+                          </h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            From React and Node.js to Python and Go, our models are trained on millions of repositories to provide accurate insights across any modern tech stack, including emerging 2026 frameworks.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Technical Deep Dive Section */}
+                    <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 sm:p-12 rounded-[2.5rem]">
+                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-8 uppercase tracking-tight text-center">Technical Deep Dive</h3>
+                      <div className="space-y-8 max-w-4xl mx-auto">
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3">Advanced Semantic Analysis Engine</h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Our core engine utilizes a multi-layered approach to code understanding. We combine Abstract Syntax Tree (AST) parsing with high-dimensional vector embeddings to capture both the structural and semantic intent of your code. In 2026, this allows us to detect complex logic flaws that traditional static analysis tools miss entirely.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3">Context-Aware LLM Orchestration</h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            We don't just send your code to a generic model. GitRepoAnalyzer orchestrates a fleet of specialized AI agents, each fine-tuned for specific tasks like security auditing, performance optimization, or architectural mapping. This ensures that the insights you receive are highly accurate and contextually relevant to your specific project.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3">Real-time Dependency Graphing</h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Our platform builds a real-time, interactive dependency graph of your entire repository. This allows you to visualize how changes in one module might ripple through the rest of your system, helping you avoid regressions and maintain a clean, modular architecture.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security & Privacy Section */}
+                    <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 sm:p-12 rounded-[2.5rem]">
+                      <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-8 uppercase tracking-tight text-center">Security & Privacy</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/5 dark:border-white/5">
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3">Zero-Trust Architecture</h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Your code is analyzed in a strictly isolated, ephemeral environment. We follow a zero-trust model, ensuring that your intellectual property is never stored permanently or used to train public models without your explicit consent.
+                          </p>
+                        </div>
+                        <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/5 dark:border-white/5">
+                          <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-3">End-to-End Encryption</h4>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            All data transmitted between your browser and our analysis engine is protected by industry-standard TLS 1.3 encryption. Your repository tokens and sensitive metadata are handled with the highest level of security.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 )}
               </AnimatePresence>
@@ -2809,45 +2901,81 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           <div role="img" aria-label="Abstract technology background representing code analysis and AI" className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-luminosity"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-transparent"></div>
           
-          <div className="max-w-6xl mx-auto px-6 py-20 lg:px-12 relative z-10">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl lg:text-4xl font-black text-white mb-4 tracking-tight">AI-Powered Code Intelligence at Scale</h2>
-              <p className="text-zinc-400 text-lg max-w-2xl mx-auto">Empowering developers with deep architectural understanding, automated code fixes, and security foresight through advanced AI repository analysis.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
+            <div className="max-w-6xl mx-auto px-6 py-20 lg:px-12 relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
+                <div>
+                  <h2 className="text-3xl lg:text-5xl font-black text-white mb-6 tracking-tight leading-tight">AI-Powered Code Intelligence at Scale</h2>
+                  <p className="text-zinc-400 text-lg max-w-2xl leading-relaxed mb-8">Empowering developers with deep architectural understanding, automated code fixes, and security foresight through advanced AI repository analysis. Our platform bridges the gap between complex codebases and actionable insights.</p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <div className="text-3xl font-black text-indigo-400 mb-1">AI</div>
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Powered Analysis</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-black text-emerald-400 mb-1">24/7</div>
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Security Auditing</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-8 rounded-[3rem]">
+                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                    <Sparkles className="w-6 h-6 text-indigo-400" />
+                    Why use GitRepoAnalyzer?
+                  </h3>
+                  <ul className="space-y-4">
+                    {[
+                      'Understand legacy codebases in minutes, not days.',
+                      'Identify critical security vulnerabilities automatically.',
+                      'Generate high-quality documentation instantly.',
+                      'Apply AI-suggested fixes with a single click.',
+                      'Improve overall code quality and maintainability.'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-zinc-400 text-sm leading-relaxed">
+                        <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="text-center mb-16">
+                <h2 className="text-2xl lg:text-3xl font-black text-white mb-4 tracking-tight">Trusted by Developers Worldwide</h2>
+                <p className="text-zinc-500 text-sm max-w-xl mx-auto">Join thousands of developers who use GitRepoAnalyzer to maintain high standards of code quality and security.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
                 <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 border border-indigo-500/30 group-hover:scale-110 transition-transform duration-300">
                   <Activity className="w-7 h-7 text-indigo-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-4">Deep Repository Analysis</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  We use advanced AI models to read through repository metadata, code structure, and documentation to understand the core architecture and purpose of your GitHub projects.
+                  We use advanced AI models to read through repository metadata, code structure, and documentation to understand the core architecture and purpose of your GitHub projects. Our 2026 engine provides unparalleled depth in understanding complex system designs.
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
+              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
                 <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-500/30 group-hover:scale-110 transition-transform duration-300">
                   <ShieldAlert className="w-7 h-7 text-rose-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-4">Automated Security Review</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  Get instant feedback on potential vulnerabilities, outdated dependencies, and security misconfigurations before you deploy with our AI code reviewer.
+                  Get instant feedback on potential vulnerabilities, outdated dependencies, and security misconfigurations before you deploy with our AI code reviewer. We scan for OWASP Top 10 risks and emerging zero-day threats in real-time.
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
+              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors duration-300 group">
                 <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/30 group-hover:scale-110 transition-transform duration-300">
                   <Zap className="w-7 h-7 text-emerald-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-4">Actionable Code Fixes</h3>
                 <p className="text-zinc-400 leading-relaxed">
-                  Receive concrete recommendations for refactoring, performance optimization, automated bug fixes, and generate comprehensive project documentation instantly.
+                  Receive concrete recommendations for refactoring, performance optimization, automated bug fixes, and generate comprehensive project documentation instantly. Our AI doesn't just point out problems; it provides the solution.
                 </p>
               </div>
             </div>
-
-            <div className="mt-24 text-center border-t border-white/10 pt-16">
-              <h2 className="text-2xl font-bold text-white mb-8">Supported Technologies & Frameworks</h2>
-              <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+              <div className="mt-24 text-center border-t border-white/10 pt-16">
+                <h2 className="text-2xl font-bold text-white mb-8">Supported Technologies & Frameworks</h2>
+                <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
                 {['JavaScript', 'TypeScript', 'Python', 'React', 'Node.js', 'Next.js', 'Vue', 'Angular', 'Go', 'Rust', 'Java', 'C++', 'Ruby on Rails', 'PHP', 'Docker', 'Kubernetes'].map((tech) => (
                   <span key={tech} className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium hover:bg-white/10 hover:text-white transition-colors cursor-default">
                     {tech}
@@ -2887,8 +3015,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           </div>
         </div>
 
-        <Comments adBlockDetected={adBlockDetected} />
-
         {/* Footer */}
         <footer className="bg-zinc-950 py-12 border-t border-white/10 relative z-10">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-12">
@@ -2904,7 +3030,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                 <li><button onClick={() => setShowAboutModal(true)} className="hover:text-white transition-colors">About Features</button></li>
                 <li><button onClick={() => setShowBlog(true)} className="hover:text-white transition-colors">Blog & Articles</button></li>
                 <li><button onClick={() => {
-                  const el = document.getElementById('comments-section');
+                  const el = document.getElementById('testimonials-section');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }} className="hover:text-white transition-colors">Community Feedback</button></li>
                 <li><button onClick={() => setShowPrivacyModal(true)} className="hover:text-white transition-colors">Privacy Policy</button></li>
@@ -2923,13 +3049,24 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-white/10 text-center text-zinc-500 text-xs">
             © {new Date().getFullYear()} GitRepoAnalyzer. All rights reserved.
           </div>
+          
+          {/* Secondary Footer Links */}
+          <div className="mt-8 py-8 border-t border-white/5 text-center">
+            <div className="flex justify-center flex-wrap gap-6 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+              <button onClick={() => setShowAboutModal(true)} className="hover:text-indigo-500 transition-colors">About</button>
+              <button onClick={() => setShowContactModal(true)} className="hover:text-indigo-500 transition-colors">Contact</button>
+              <button onClick={() => setShowPrivacyModal(true)} className="hover:text-indigo-500 transition-colors">Privacy</button>
+              <button onClick={() => setShowTermsModal(true)} className="hover:text-indigo-500 transition-colors">Terms</button>
+              <button onClick={() => setShowBlog(true)} className="hover:text-indigo-500 transition-colors">Blog</button>
+            </div>
+          </div>
         </footer>
-    </main>
+      </main>
 
       {/* Instruction Popup */}
       <AnimatePresence>
         {showInstructionPopup && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-black/40">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2983,42 +3120,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
       <TermsModal show={showTermsModal} onClose={() => setShowTermsModal(false)} />
       <AboutModal show={showAboutModal} onClose={() => setShowAboutModal(false)} />
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-black/5 dark:border-white/5 text-center">
-        <div className="flex justify-center gap-6 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-          <button onClick={() => setShowAboutModal(true)} className="hover:text-indigo-500 transition-colors">About</button>
-          <button onClick={() => setShowContactModal(true)} className="hover:text-indigo-500 transition-colors">Contact</button>
-          <button onClick={() => setShowPrivacyModal(true)} className="hover:text-indigo-500 transition-colors">Privacy</button>
-          <button onClick={() => setShowTermsModal(true)} className="hover:text-indigo-500 transition-colors">Terms</button>
-          <button onClick={() => setShowBlog(true)} className="hover:text-indigo-500 transition-colors">Blog</button>
-        </div>
-      </footer>
-
-      {/* Floating Message Icon */}
-      <AnimatePresence>
-        {!isCommentsInView && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.5, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.5, y: 50 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              const el = document.getElementById('comments-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="fixed bottom-24 right-6 z-[90] p-4 bg-indigo-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/40 border border-indigo-500/50 hover:bg-indigo-700 transition-colors group"
-            title="View Comments"
-          >
-            <MessageSquare className="w-6 h-6" />
-            <span className="absolute right-full mr-4 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10">
-              Community Feedback
-            </span>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Cookie Consent Banner */}
       <CookieConsent 
         show={!hasAcceptedCookies} 
         onAccept={() => {
@@ -3041,7 +3142,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         }}
       />
       <ScrollToTop />
-      </div>
       <PRModal
         show={showPRModal}
         onClose={() => setShowPRModal(false)}
@@ -3052,6 +3152,7 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           setShowPRCommands(true);
         }}
       />
+      </div>
     </ErrorBoundary>
   );
 }

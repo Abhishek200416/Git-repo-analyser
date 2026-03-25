@@ -23,18 +23,63 @@ try {
     let serviceAccount = null;
     
     if (serviceAccountStr && serviceAccountStr.trim()) {
+      console.log('[FIREBASE] Attempting to parse service account...');
       try {
-        serviceAccount = JSON.parse(serviceAccountStr);
+        // Handle potential double-escaping or extra quotes
+        let cleanStr = serviceAccountStr.trim();
+        if (cleanStr.startsWith('"') && cleanStr.endsWith('"')) {
+          cleanStr = JSON.parse(cleanStr);
+        }
+        
+        serviceAccount = JSON.parse(cleanStr);
+        
+        if (serviceAccount && serviceAccount.private_key) {
+          console.log('[FIREBASE] Private key found, length:', serviceAccount.private_key.length);
+          
+          // Replace escaped newlines and trim quotes
+          let key = serviceAccount.private_key.replace(/\\n/g, '\n').trim();
+          key = key.replace(/^["']|["']$/g, '');
+          
+          // Ensure PEM headers are present
+          if (!key.includes('-----BEGIN PRIVATE KEY-----')) {
+            console.log('[FIREBASE] Adding missing PEM headers');
+            key = `-----BEGIN PRIVATE KEY-----\n${key}\n-----END PRIVATE KEY-----`;
+          }
+          
+          serviceAccount.private_key = key;
+          console.log('[FIREBASE] Private key formatted, starts with:', serviceAccount.private_key.substring(0, 30));
+        }
+
+        // Validate required fields
+        if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+          console.error('[FIREBASE] ERROR: Service account JSON is missing required fields (project_id, client_email, private_key).');
+          serviceAccount = null;
+        } else {
+          console.log('[FIREBASE] JSON parse and validation successful');
+        }
       } catch (e) {
         console.error('[FIREBASE] Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:', e);
+        serviceAccount = null;
+        if (serviceAccountStr.trim().startsWith('var') || serviceAccountStr.trim().startsWith('const')) {
+          console.error('[FIREBASE] ERROR: It looks like you pasted a JavaScript code snippet into FIREBASE_SERVICE_ACCOUNT instead of the raw JSON content.');
+        }
       }
     }
     
     if (serviceAccount) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-      console.log('[FIREBASE] Initialized with Service Account');
+      try {
+        console.log('[FIREBASE] Initializing admin with cert...');
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('[FIREBASE] Initialized with Service Account');
+      } catch (initError: any) {
+        console.error('[FIREBASE] admin.initializeApp(cert) failed:', initError.message);
+        console.log('[FIREBASE] Falling back to project ID initialization...');
+        admin.initializeApp({
+          projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0745348592'
+        });
+      }
     } else {
       // Fallback for local development if service account is not provided
       admin.initializeApp({
@@ -69,8 +114,7 @@ async function startServer() {
 
   app.use(cors());
   app.use(express.json());
-  console.log('[SERVER] Middleware initialized');
-  console.log('[SERVER] Middleware initialized');
+  console.log('[SERVER] Basic middleware (CORS, JSON) initialized');
 
   // --- API Routes ---
 
@@ -361,12 +405,28 @@ async function startServer() {
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[SERVER] Initializing Vite middleware...');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-    console.log('[SERVER] Vite middleware initialized');
+    try {
+      // Add a timeout to Vite initialization to prevent hanging the whole server
+      const vitePromise = createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Vite initialization timed out after 30s')), 30000)
+      );
+
+      const vite = await Promise.race([vitePromise, timeoutPromise]) as any;
+      
+      app.use(vite.middlewares);
+      console.log('[SERVER] Vite middleware initialized successfully');
+    } catch (viteError: any) {
+      console.error('[SERVER] Vite Middleware Error:', viteError.message || viteError);
+      // If Vite fails, we still want the API to work
+      app.get('/', (req, res) => {
+        res.status(500).send(`Vite failed to initialize: ${viteError.message || 'Unknown error'}. Check server logs.`);
+      });
+    }
   } else {
     console.log('[SERVER] Serving static files from dist...');
     const distPath = path.join(process.cwd(), 'dist');
@@ -377,8 +437,19 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SERVER] Server running on http://localhost:${PORT}`);
+    console.log(`[SERVER] >>> SUCCESS: Server is now listening on http://0.0.0.0:${PORT} <<<`);
   });
 }
 
-startServer();
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[SERVER] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[SERVER] Uncaught Exception:', err);
+});
+
+console.log('[SERVER] Calling startServer()...');
+startServer().catch(err => {
+  console.error('[SERVER] FATAL: startServer() failed:', err);
+});

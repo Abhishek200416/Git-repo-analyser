@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { RotateCcw, X, Mail, Loader2 } from 'lucide-react';
 
 interface RestoreAccessModalProps {

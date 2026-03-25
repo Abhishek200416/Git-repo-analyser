@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, ShieldCheck, Zap, CreditCard, Play, RotateCcw } from 'lucide-react';
 
 interface Plan {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, X, Zap, Layers, CheckCircle2, Check, RotateCcw, CreditCard, Github, Code2, Terminal, Activity, ArrowRight, Minus } from 'lucide-react';
 
 interface Plan {

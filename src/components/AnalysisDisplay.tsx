@@ -99,8 +99,8 @@ export const AnalysisDisplay = ({ analysis, theme }: { analysis: AnalysisResult,
       {viewMode === 'tabs' ? (
         <div className="flex flex-col">
           {/* Tabs Navigation - Sticky & Mobile Native Style */}
-          <div className="sticky top-0 z-30 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-md -mx-4 px-4 py-4 mb-8 border-b border-black/5 dark:border-white/5">
-            <div className="flex overflow-x-auto gap-2 no-scrollbar snap-x">
+          <div className="sticky top-0 z-30 bg-zinc-50 dark:bg-zinc-950 -mx-4 px-4 py-3 mb-6 border-b border-black/5 dark:border-white/5 overflow-hidden">
+            <div className="flex overflow-x-auto gap-1.5 pb-2 custom-scrollbar snap-x scroll-smooth">
               {phases.map((phase, index) => {
                 const Icon = getPhaseIcon(phase.title);
                 const isActive = activePhaseIndex === index;
@@ -108,20 +108,20 @@ export const AnalysisDisplay = ({ analysis, theme }: { analysis: AnalysisResult,
                   <button
                     key={index}
                     onClick={() => setActivePhaseIndex(index)}
-                    className={`snap-start shrink-0 relative flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all border font-black text-[10px] uppercase tracking-widest ${
+                    className={`snap-start shrink-0 relative flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all border font-black text-[9px] uppercase tracking-widest ${
                       isActive 
-                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-500/20 scale-105 z-10' 
+                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20 z-10' 
                         : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 text-zinc-500 hover:border-indigo-500/30'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-indigo-500'}`} />
+                    <Icon className={`w-3 h-3 ${isActive ? 'text-white' : 'text-indigo-500'}`} />
                     <span className="whitespace-nowrap">
                       {phase.title.split(':')[0].replace('PHASE ', 'P')}
                     </span>
                     {isActive && (
                       <motion.div 
                         layoutId="activeTab"
-                        className="absolute inset-0 bg-indigo-600 rounded-2xl -z-10"
+                        className="absolute inset-0 bg-indigo-600 rounded-xl -z-10"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
@@ -163,7 +163,7 @@ export const AnalysisDisplay = ({ analysis, theme }: { analysis: AnalysisResult,
                 {(activePhaseIndex === 12 || activePhaseIndex === phases.length - 1) && analysis.categoryScores && (
                   <div className="mb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {Object.entries(analysis.categoryScores).map(([category, score]) => (
-                      <div key={category} className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md p-6 rounded-3xl border border-black/5 dark:border-white/5 shadow-xl group hover:scale-[1.02] transition-all duration-500">
+                      <div key={category} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-black/5 dark:border-white/5 shadow-xl group hover:scale-[1.02] transition-all duration-500">
                         <div className="flex justify-between items-end mb-4">
                           <h4 className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{category}</h4>
                           <span className="text-3xl font-black text-zinc-900 dark:text-white">{score}<span className="text-xs text-zinc-400">/100</span></span>
@@ -233,7 +233,7 @@ export const AnalysisDisplay = ({ analysis, theme }: { analysis: AnalysisResult,
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       onClick={() => setSelectedNodeDetails(null)}
-                      className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                      className="absolute inset-0 bg-black/80"
                     />
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95, y: 20 }}

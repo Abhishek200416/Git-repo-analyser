@@ -46,13 +46,21 @@ service cloud.firestore {
     }
 
     function isValidComment(data) {
-      return hasOnlyAllowedFields(['uid', 'userName', 'userEmail', 'userPhoto', 'content', 'rating', 'imageUrl', 'createdAt']) &&
+      return hasOnlyAllowedFields(['uid', 'userName', 'userEmail', 'userPhoto', 'content', 'rating', 'imageUrl', 'createdAt', 'sessionId']) &&
+             data.uid is string && data.uid.size() > 0 &&
              data.userName is string && data.userName.size() > 0 &&
+             data.userEmail is string && data.userEmail.size() > 0 &&
+             (data.userPhoto == null || data.userPhoto is string) &&
              data.content is string && data.content.size() > 0 &&
              data.content.size() < 2000 &&
              (data.rating == null || (data.rating is int && data.rating >= 1 && data.rating <= 5)) &&
              (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() < 1000000)) &&
-             data.uid == request.auth.uid;
+             data.createdAt is timestamp &&
+             data.sessionId is string &&
+             (
+               (isAuthenticated() && data.uid == request.auth.uid) ||
+               (!isAuthenticated() && data.uid.matches("^guest-.*") && data.sessionId == data.uid)
+             );
     }
 
     // ===============================================================
@@ -86,9 +94,11 @@ service cloud.firestore {
 
     match /comments/{commentId} {
       allow read: if true; // Publicly readable
-      allow create: if isAuthenticated() && isValidComment(request.resource.data); // Require auth (anonymous or real)
+      allow create: if isValidComment(request.resource.data); // Allow guest or auth
       allow update: if isAdmin();
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow delete: if isAdmin() || 
+                    (isAuthenticated() && resource.data.uid == request.auth.uid) ||
+                    (!isAuthenticated() && resource.data.uid.matches("^guest-.*")); // Basic protection for guests
     }
   }
 }
