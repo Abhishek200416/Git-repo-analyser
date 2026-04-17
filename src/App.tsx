@@ -113,7 +113,6 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { CookieModal } from './components/CookieModal';
 import { PRModal } from './components/PRModal';
 import { ClearHistoryModal } from './components/ClearHistoryModal';
-import { ShareModal } from './components/ShareModal';
 import { FEATURES, DOC_PHASE_INDICES } from './constants';
 import { BLOG_POSTS } from './blog-data';
 import { generatePDF } from './utils/pdfExport';
@@ -308,7 +307,6 @@ export default function App() {
     return localStorage.getItem('repoAnalyzerCookiesAccepted') === 'true';
   });
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
 
   useEffect(() => {
@@ -322,14 +320,13 @@ export default function App() {
     else if (showContactModal) hash = '#contact';
     else if (showCookieModal) hash = '#cookies';
     else if (showPRModal) hash = '#pr';
-    else if (showShareModal) hash = '#share';
     
     if (hash) {
       window.history.pushState(null, '', hash);
     } else {
       window.history.pushState(null, '', window.location.pathname + window.location.search);
     }
-  }, [showAboutModal, showFeedbackModal, showTermsModal, showPrivacyModal, showBlog, showDonationModal, showContactModal, showCookieModal, showPRModal, showShareModal]);
+  }, [showAboutModal, showFeedbackModal, showTermsModal, showPrivacyModal, showBlog, showDonationModal, showContactModal, showCookieModal, showPRModal]);
 
   // Handle browser back button and initial load for modals
   useEffect(() => {
@@ -344,7 +341,6 @@ export default function App() {
       setShowContactModal(hash === '#contact');
       setShowCookieModal(hash === '#cookies');
       setShowPRModal(hash === '#pr');
-      setShowShareModal(hash === '#share');
     };
     
     // Check hash on initial load
@@ -2629,15 +2625,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                             <BookOpen className="w-4 h-4" /> Docs PDF
                           </button>
                         </div>
-
-                        <div className="flex items-center gap-1 bg-amber-500/5 dark:bg-amber-500/10 p-1 rounded-2xl border border-amber-500/20">
-                          <button 
-                            onClick={() => setShowShareModal(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 rounded-xl transition-all shadow-sm hover:shadow"
-                          >
-                            <Share2 className="w-4 h-4" /> Share Results
-                          </button>
-                        </div>
                       </div>
 
                     </div>
@@ -3161,14 +3148,6 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         )}
       </AnimatePresence>
 
-      {/* Modals */}
-      <AnimatePresence>
-        <ShareModal 
-          show={showShareModal} 
-          onClose={() => setShowShareModal(false)}
-          repoUrl={currentAnalysis ? currentAnalysis.repoUrl : ''}
-        />
-      </AnimatePresence>
       <ClearHistoryModal
         show={showClearHistoryConfirm}
         onClose={() => setShowClearHistoryConfirm(false)}
