@@ -35,19 +35,27 @@ export const TermsModal: React.FC<TermsModalProps> = ({ show, onClose }) => {
             <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent space-y-6 text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
               <section>
                 <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">1. Acceptance of Terms</h3>
-                <p>By accessing and using GitRepoAnalyzer, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the service.</p>
+                <p>By accessing and using GitRepoAnalyzer, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the service. We reserve the right to modify these terms at any time.</p>
               </section>
               <section>
                 <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">2. Description of Service</h3>
-                <p>GitRepoAnalyzer provides AI-powered analysis of GitHub repositories. The service is provided "as is" and we make no guarantees regarding the accuracy or completeness of the analysis.</p>
+                <p>GitRepoAnalyzer provides AI-powered analysis of GitHub repositories. The service is provided "as is" and we make no guarantees regarding the accuracy, completeness, or reliability of the analysis. We reserve the right to modify or discontinue the service at any time without notice.</p>
               </section>
               <section>
                 <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">3. User Responsibilities</h3>
-                <p>You are responsible for the repository links you provide. Ensure you have the right to analyze the repositories you submit.</p>
+                <p>You are responsible for the repository links you provide. Ensure you have the right to analyze the repositories you submit. You agree not to use the service for any unlawful purpose or to violate any third-party rights.</p>
               </section>
               <section>
-                <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">4. Limitations of Liability</h3>
-                <p>GitRepoAnalyzer shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service.</p>
+                <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">4. Intellectual Property</h3>
+                <p>All content and functionality provided by GitRepoAnalyzer, including the AI models and analysis reports, are the property of GitRepoAnalyzer. You are granted a limited, non-exclusive license to use the service for personal or professional purposes.</p>
+              </section>
+              <section>
+                <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">5. Limitations of Liability</h3>
+                <p>GitRepoAnalyzer shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service, including but not limited to damages for loss of profits, data, or other intangible losses.</p>
+              </section>
+              <section>
+                <h3 className="text-zinc-900 dark:text-white font-black uppercase text-sm tracking-widest mb-3">6. Governing Law</h3>
+                <p>These terms shall be governed by and construed in accordance with the laws of the jurisdiction in which GitRepoAnalyzer operates, without regard to its conflict of law provisions.</p>
               </section>
             </div>
             <button

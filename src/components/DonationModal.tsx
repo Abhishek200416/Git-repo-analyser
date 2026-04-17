@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Cpu, Zap, ShieldCheck, Globe, Mail } from 'lucide-react';
+import { Heart, Mail, Coffee } from 'lucide-react';
 
 interface DonationModalProps {
   show: boolean;
@@ -46,12 +46,13 @@ export const DonationModal: React.FC<DonationModalProps> = ({ show, onClose }) =
             </div>
             
             <div className="space-y-3">
+              {/* Replace the href below with your actual donation link like BuyMeACoffee, PayPal, or UPI */}
               <a
-                href="mailto:abhishek20040916@gmail.com?subject=GitRepoAnalyzer Support Inquiry"
+                href="mailto:abhishek20040916@gmail.com?subject=GitRepoAnalyzer Donation/Support"
                 className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] shadow-2xl uppercase tracking-widest text-xs"
               >
-                <Mail className="w-4 h-4" />
-                Contact via Email
+                <Coffee className="w-4 h-4" />
+                Support the Project
               </a>
             </div>
             <button

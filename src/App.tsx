@@ -113,6 +113,7 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { CookieModal } from './components/CookieModal';
 import { PRModal } from './components/PRModal';
 import { ClearHistoryModal } from './components/ClearHistoryModal';
+import { ShareModal } from './components/ShareModal';
 import { FEATURES, DOC_PHASE_INDICES } from './constants';
 import { BLOG_POSTS } from './blog-data';
 import { generatePDF } from './utils/pdfExport';
@@ -297,6 +298,8 @@ export default function App() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
+
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
@@ -305,6 +308,51 @@ export default function App() {
     return localStorage.getItem('repoAnalyzerCookiesAccepted') === 'true';
   });
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showPRModal, setShowPRModal] = useState(false);
+
+  useEffect(() => {
+    let hash = '';
+    if (showAboutModal) hash = '#about';
+    else if (showFeedbackModal) hash = '#feedback';
+    else if (showTermsModal) hash = '#terms';
+    else if (showPrivacyModal) hash = '#privacy';
+    else if (showBlog) hash = '#blog';
+    else if (showDonationModal) hash = '#support';
+    else if (showContactModal) hash = '#contact';
+    else if (showCookieModal) hash = '#cookies';
+    else if (showPRModal) hash = '#pr';
+    else if (showShareModal) hash = '#share';
+    
+    if (hash) {
+      window.history.pushState(null, '', hash);
+    } else {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [showAboutModal, showFeedbackModal, showTermsModal, showPrivacyModal, showBlog, showDonationModal, showContactModal, showCookieModal, showPRModal, showShareModal]);
+
+  // Handle browser back button and initial load for modals
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      setShowAboutModal(hash === '#about');
+      setShowFeedbackModal(hash === '#feedback');
+      setShowTermsModal(hash === '#terms');
+      setShowPrivacyModal(hash === '#privacy');
+      setShowBlog(hash === '#blog');
+      setShowDonationModal(hash === '#support');
+      setShowContactModal(hash === '#contact');
+      setShowCookieModal(hash === '#cookies');
+      setShowPRModal(hash === '#pr');
+      setShowShareModal(hash === '#share');
+    };
+    
+    // Check hash on initial load
+    handlePopState();
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [isFixMode, setIsFixMode] = useState(false);
   const [categoryScores, setCategoryScores] = useState<Record<string, number> | null>(null);
@@ -312,7 +360,6 @@ export default function App() {
   const [selectedFindings, setSelectedFindings] = useState<string[]>([]);
   const [fixDiff, setFixDiff] = useState<string | null>(null);
   const [isGeneratingFix, setIsGeneratingFix] = useState(false);
-  const [showPRModal, setShowPRModal] = useState(false);
   const [showPRCommands, setShowPRCommands] = useState(false);
   const [prConfig, setPrConfig] = useState({ title: '', body: '', branch: 'fix/repo-analyzer-suggestions' });
   const [findings, setFindings] = useState<string[]>([]);
@@ -1680,12 +1727,10 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         onClose={() => setShowAboutModal(false)}
       />
 
-
-    <DonationModal
+      <DonationModal
         show={showDonationModal}
         onClose={() => setShowDonationModal(false)}
       />
-
 
       <FeedbackModal
         show={showFeedbackModal}
@@ -1794,14 +1839,15 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             </div>
             <p className="text-xs lg:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4 lg:mb-6 font-medium hidden sm:block">AI-powered GitHub repository insights, architecture, and security checks.</p>
               <div className="grid grid-cols-2 gap-2 mb-6">
-                <button 
-                  onClick={() => setShowAboutModal(true)}
+                <a 
+                  href="/about.html"
+                  onClick={(e) => { e.preventDefault(); setShowAboutModal(true); }}
                   className="w-full px-3 py-2.5 bg-indigo-500/10 dark:bg-indigo-500/20 hover:bg-indigo-500/20 dark:hover:bg-indigo-500/30 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-500/20 transition-all flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md group relative overflow-hidden text-[10px] text-center"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <Info className="w-4 h-4 text-indigo-500" /> 
                   <span>Features</span>
-                </button>
+                </a>
 
                 <button 
                   onClick={() => setShowBlog(true)}
@@ -1812,15 +1858,16 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                   <BookOpen className="w-4 h-4 text-indigo-500" /> 
                   <span>Blog</span>
                 </button>
-                <button 
-                  onClick={() => setShowFeedbackModal(true)}
+                <a 
+                  href="/contact.html"
+                  onClick={(e) => { e.preventDefault(); setShowFeedbackModal(true); }}
                   className="w-full px-3 py-2.5 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl text-zinc-700 dark:text-zinc-300 font-bold border border-black/5 dark:border-white/5 transition-all flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md group relative overflow-hidden text-[10px] text-center"
                   title="Report issues or request features"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <Mail className="w-4 h-4 text-indigo-500" /> 
                   <span>Feedback</span>
-                </button>
+                </a>
                 <button 
                   onClick={() => setShowDonationModal(true)}
                   className="w-full px-3 py-2.5 bg-pink-500/5 dark:bg-pink-500/10 hover:bg-pink-500/10 dark:hover:bg-pink-500/20 rounded-xl text-pink-600 dark:text-pink-400 font-bold border border-pink-500/20 transition-all flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md group relative overflow-hidden text-[10px] text-center"
@@ -2582,6 +2629,15 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                             <BookOpen className="w-4 h-4" /> Docs PDF
                           </button>
                         </div>
+
+                        <div className="flex items-center gap-1 bg-amber-500/5 dark:bg-amber-500/10 p-1 rounded-2xl border border-amber-500/20">
+                          <button 
+                            onClick={() => setShowShareModal(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 rounded-xl transition-all shadow-sm hover:shadow"
+                          >
+                            <Share2 className="w-4 h-4" /> Share Results
+                          </button>
+                        </div>
                       </div>
 
                     </div>
@@ -2745,20 +2801,22 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
                             <div 
                               key={i} 
                               className="group cursor-pointer p-4 rounded-2xl bg-white/30 dark:bg-zinc-950/30 border border-transparent hover:border-indigo-500/30 hover:bg-white/50 dark:hover:bg-zinc-950/50 transition-all duration-300" 
-                              onClick={() => setShowBlog(true)}
                             >
-                              <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{post.date}</div>
-                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1 line-clamp-1">{post.title}</h4>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">{post.excerpt}</p>
+                              <a href={`/blog/${post.id === 'ai-in-software-development' ? 'ai-future' : post.id === 'security-vulnerabilities-owasp' ? 'security-vulnerabilities' : post.id}.html`} onClick={(e) => { e.preventDefault(); setShowBlog(true); }} className="block">
+                                <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{post.date}</div>
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1 line-clamp-1">{post.title}</h4>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">{post.excerpt}</p>
+                              </a>
                             </div>
                           ))}
                         </div>
-                        <button 
-                          onClick={() => setShowBlog(true)}
-                          className="mt-8 w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform"
+                        <a 
+                          href="/blog.html"
+                          onClick={(e) => { e.preventDefault(); setShowBlog(true); }}
+                          className="mt-8 w-full block text-center py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform"
                         >
                           Read All Articles
-                        </button>
+                        </a>
                       </div>
 
                       <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem]">
@@ -3027,21 +3085,21 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
             <div>
               <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Resources</h2>
               <ul className="space-y-2 text-sm text-zinc-400">
-                <li><button onClick={() => setShowAboutModal(true)} className="hover:text-white transition-colors">About Features</button></li>
-                <li><button onClick={() => setShowBlog(true)} className="hover:text-white transition-colors">Blog & Articles</button></li>
+                <li><a href="/about.html" onClick={(e) => { e.preventDefault(); setShowAboutModal(true); }} className="hover:text-white transition-colors">About Features</a></li>
+                <li><a href="/blog.html" onClick={(e) => { e.preventDefault(); setShowBlog(true); }} className="hover:text-white transition-colors">Blog & Articles</a></li>
                 <li><button onClick={() => {
                   const el = document.getElementById('testimonials-section');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }} className="hover:text-white transition-colors">Community Feedback</button></li>
-                <li><button onClick={() => setShowPrivacyModal(true)} className="hover:text-white transition-colors">Privacy Policy</button></li>
+                <li><a href="/privacy.html" onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }} className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><button onClick={() => setShowCookieModal(true)} className="hover:text-white transition-colors">Cookie Policy</button></li>
-                <li><button onClick={() => setShowTermsModal(true)} className="hover:text-white transition-colors">Terms of Service</button></li>
+                <li><a href="/terms.html" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="hover:text-white transition-colors">Terms of Service</a></li>
               </ul>
             </div>
             <div>
               <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">Support</h2>
               <ul className="space-y-2 text-sm text-zinc-400">
-                <li><button onClick={() => setShowFeedbackModal(true)} className="hover:text-white transition-colors">Contact</button></li>
+                <li><a href="/contact.html" onClick={(e) => { e.preventDefault(); setShowFeedbackModal(true); }} className="hover:text-white transition-colors">Contact</a></li>
                 <li><button onClick={() => setShowDonationModal(true)} className="hover:text-white transition-colors">Support & Donation</button></li>
               </ul>
             </div>
@@ -3053,11 +3111,11 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
           {/* Secondary Footer Links */}
           <div className="mt-8 py-8 border-t border-white/5 text-center">
             <div className="flex justify-center flex-wrap gap-6 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-              <button onClick={() => setShowAboutModal(true)} className="hover:text-indigo-500 transition-colors">About</button>
-              <button onClick={() => setShowContactModal(true)} className="hover:text-indigo-500 transition-colors">Contact</button>
-              <button onClick={() => setShowPrivacyModal(true)} className="hover:text-indigo-500 transition-colors">Privacy</button>
-              <button onClick={() => setShowTermsModal(true)} className="hover:text-indigo-500 transition-colors">Terms</button>
-              <button onClick={() => setShowBlog(true)} className="hover:text-indigo-500 transition-colors">Blog</button>
+              <a href="/about.html" onClick={(e) => { e.preventDefault(); setShowAboutModal(true); }} className="hover:text-indigo-500 transition-colors">About</a>
+              <a href="/contact.html" onClick={(e) => { e.preventDefault(); setShowContactModal(true); }} className="hover:text-indigo-500 transition-colors">Contact</a>
+              <a href="/privacy.html" onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }} className="hover:text-indigo-500 transition-colors">Privacy</a>
+              <a href="/terms.html" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="hover:text-indigo-500 transition-colors">Terms</a>
+              <a href="/blog.html" onClick={(e) => { e.preventDefault(); setShowBlog(true); }} className="hover:text-indigo-500 transition-colors">Blog</a>
             </div>
           </div>
         </footer>
@@ -3103,6 +3161,14 @@ git push -u origin ${prConfig.branch || `fix/repo-analyzer-${Date.now()}`}
         )}
       </AnimatePresence>
 
+      {/* Modals */}
+      <AnimatePresence>
+        <ShareModal 
+          show={showShareModal} 
+          onClose={() => setShowShareModal(false)}
+          repoUrl={currentAnalysis ? currentAnalysis.repoUrl : ''}
+        />
+      </AnimatePresence>
       <ClearHistoryModal
         show={showClearHistoryConfirm}
         onClose={() => setShowClearHistoryConfirm(false)}
