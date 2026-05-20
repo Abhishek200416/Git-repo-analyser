@@ -30,7 +30,15 @@ export const Mermaid = ({ chart, onNodeClick, theme }: { chart: string, onNodeCl
   const id = useMemo(() => `mermaid-${Math.random().toString(36).slice(2, 9)}`, []);
 
   const downloadSVG = () => {
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const container = document.getElementById(id + '-container');
+    const svgElement = container?.querySelector('svg');
+    if (!svgElement) return;
+
+    svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svgElement.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -45,6 +53,9 @@ export const Mermaid = ({ chart, onNodeClick, theme }: { chart: string, onNodeCl
     const container = document.getElementById(id + '-container');
     const svgElement = container?.querySelector('svg');
     if (!svgElement) return;
+
+    svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svgElement.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
 
     const canvas = document.createElement('canvas');
     const bbox = svgElement.getBBox();
